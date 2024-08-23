@@ -4,7 +4,8 @@ import cgi
 import os
 
 PORT = 19999
-UPLOAD_DIR = r"C:\Users\LENOVO\Desktop\New folder"
+UPLOAD_DIR = r"/home/bruh/espimages"
+# os.mkdir(UPLOAD_DIR)
 INDEX_FILE = "index.html"  # Make sure this file exists in the current directory
 
 class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -22,7 +23,7 @@ class SimpleHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         )
 
         # Extract the uploaded file
-        file_field = form['file']  # 'file' should match the key in the HTML form
+        file_field = form['imageFile']  # 'file' should match the key in the HTML form
         if file_field.filename:
             # Ensure the upload directory exists
             if not os.path.exists(UPLOAD_DIR):
