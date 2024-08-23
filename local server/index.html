@@ -1,0 +1,51 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Photo</title>
+</head>
+<body>
+    <h2>Upload a Photo</h2>
+    <form action="http://:19999" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload">
+    </form>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Photo</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Function to get the current IP address
+            function getIPAddress() {
+                // This will work if you are using a fixed IP address or can detect the IP address in some way.
+                // Note: In real scenarios, server-side scripting or a network library might be used.
+                // For example, if you are running on localhost, it might be something like `http://localhost:19999`.
+
+                // Get the current URL's hostname and port (replace port if necessary)
+                const currentHost = window.location.hostname;
+                const currentPort = 19999; // Replace with your port if different
+
+                // Construct the full URL for the form action
+                return `http://${currentHost}:${currentPort}`;
+            }
+
+            // Set the form action attribute to the URL with the IP address
+            const form = document.querySelector("form");
+            form.action = getIPAddress();
+        });
+    </script>
+</head>
+<body>
+    <h2>Upload a Photo</h2>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload">
+    </form>
+</body>
+</html>
