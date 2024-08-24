@@ -12,15 +12,15 @@ int in4_pin = 16;
 int en2_pin = 17;
 
 // IR front and back word
-int IR_F = 5;  // Replace with actual GPIO pin numbers for the front IR sensor
-int IR_B = 18; // Replace with actual GPIO pin numbers for the back IR sensor
+int IR_F = 36;  // Replace with actual GPIO pin numbers for the front IR sensor
+int IR_B = 39; // Replace with actual GPIO pin numbers for the back IR sensor
 
 // Flag to interrupt motor control
 volatile bool interruptFlag = false;
 
 void setup() {
   Serial.begin(115200);
-
+  
   if (!SerialBT.begin("esp32")) {  // Check if Bluetooth starts properly
     Serial.println("An error occurred initializing Bluetooth");
   } else {
@@ -36,6 +36,10 @@ void setup() {
   pinMode(in4_pin, OUTPUT);
   pinMode(en2_pin, OUTPUT);
 
+  digitalWrite(in1_pin, LOW);
+  digitalWrite(in2_pin, LOW);
+  digitalWrite(in3_pin, LOW);
+  digitalWrite(in4_pin, LOW);
   digitalWrite(en1_pin, LOW);
   digitalWrite(en2_pin, LOW);
 
@@ -51,8 +55,14 @@ void setup() {
 }
 
 void loop() {
+  if (Serial.available()){
+    SerialBT.write(Serial.read());
+  }
   if (SerialBT.available()) {
-    char command = SerialBT.read();
+    Serial.write(SerialBT.read());
+    delay(5);
+    char command = (char) SerialBT.read();
+    SerialBT.confirmReply(true);
     Serial.println(command);
 
     if (interruptFlag) {
@@ -62,16 +72,16 @@ void loop() {
 
     switch (command) {
       case 'F': // Move forward
-        moveForward(255);
+        moveForward(111);
         break;
       case 'B': // Move backward
-        moveBackward(255);
+        moveBackward(111);
         break;
       case 'L': // Turn left
-        turnLeft(255);
+        turnLeft(111);
         break;
       case 'R': // Turn right
-        turnRight(255);
+        turnRight(111);
         break;
       case 'S': // Stop
         stopMotors();
@@ -85,49 +95,49 @@ void loop() {
 
 void moveForward(int intensity) {
   // Motor A forward
-  digitalWrite(in1_pin, HIGH);
-  digitalWrite(in2_pin, LOW);
+  digitalWrite(in1_pin, LOW);
+  digitalWrite(in2_pin, HIGH);
   analogWrite(en1_pin, intensity); // Full speed
 
-  // Motor B forward
-  digitalWrite(in3_pin, HIGH);
-  digitalWrite(in4_pin, LOW);
+  // // Motor B forward
+  digitalWrite(in3_pin, LOW);
+  digitalWrite(in4_pin, HIGH);
   analogWrite(en2_pin, intensity); // Full speed
 }
 
 void moveBackward(int intensity) {
   // Motor A backward
-  digitalWrite(in1_pin, LOW);
-  digitalWrite(in2_pin, HIGH);
+  digitalWrite(in1_pin, HIGH);
+  digitalWrite(in2_pin, LOW);
   analogWrite(en1_pin, intensity); // Full speed
 
   // Motor B backward
-  digitalWrite(in3_pin, LOW);
-  digitalWrite(in4_pin, HIGH);
+  digitalWrite(in3_pin, HIGH);
+  digitalWrite(in4_pin, LOW);
   analogWrite(en2_pin, intensity); // Full speed
 }
 
 void turnLeft(int intensity) {
   // Motor A stop
   analogWrite(en1_pin, intensity);
-  digitalWrite(in1_pin, LOW);
-  digitalWrite(in2_pin, HIGH);
+  digitalWrite(in1_pin, HIGH);
+  digitalWrite(in2_pin, LOW);
 
   // Motor B forward
-  digitalWrite(in3_pin, HIGH);
-  digitalWrite(in4_pin, LOW);
+  digitalWrite(in3_pin, LOW);
+  digitalWrite(in4_pin, HIGH);
   analogWrite(en2_pin, intensity); // Full speed
 }
 
 void turnRight(int intensity) {
   // Motor B stop
   analogWrite(en2_pin, intensity);
-  digitalWrite(in3_pin, LOW);
-  digitalWrite(in4_pin, HIGH);
+  digitalWrite(in3_pin, HIGH);
+  digitalWrite(in4_pin, LOW);
 
   // Motor A forward
-  digitalWrite(in1_pin, HIGH);
-  digitalWrite(in2_pin, LOW);
+  digitalWrite(in1_pin, LOW);
+  digitalWrite(in2_pin, HIGH);
   analogWrite(en1_pin, intensity); // Full speed
 }
 
