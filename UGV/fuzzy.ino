@@ -10,9 +10,9 @@ int in3_pin = 4;
 int in4_pin = 16;
 int en2_pin = 17;
 
-// IR front and back word 
-int IR_F = 5 ; // ADD BINS
-int IR_B = 18 ;
+// IR front and back word
+int IR_F = 5;  // ADD BINS
+int IR_B = 18;
 
 // Flag to interrupt motor control
 volatile bool interruptFlag = false;
@@ -23,12 +23,12 @@ float speed_right = 0;
 float direction = 0;
 
 // Define the pin for the IR sensor for each wheel
-const int leftIRSensorPin = 2; // IR sensor pin for the left wheel
-const int rightIRSensorPin = 3; // IR sensor pin for the right wheel
+const int leftIRSensorPin = 2;   // IR sensor pin for the left wheel
+const int rightIRSensorPin = 3;  // IR sensor pin for the right wheel
 
 // Define constants for the wheel and tick counting
-const float wheelRadius = 0.1;  // Radius of the wheel in meters (e.g., 10 cm)
-const int ticksPerRevolution = 8; // Number of ticks per revolution (depends on the number of markers)
+const float wheelRadius = 6.5;     // Radius of the wheel in meters (e.g., 10 cm)
+const int ticksPerRevolution = 8;  // Number of ticks per revolution (depends on the number of markers)
 
 // Variables to keep track of ticks for each wheel
 volatile long leftWheelTicks = 0;
@@ -52,18 +52,18 @@ float getDistance(long ticks, float wheelRadius, int ticksPerRevolution) {
   // Calculate distance traveled
   float distance = (float(ticks) / ticksPerRevolution) * wheelCircumference;
 
-  return distance; // Return distance in meters
+  return distance;  // Return distance in meters
 }
 
 // fuzzy interference system
 void FIS(float orientation, float distance, float &speed_left, float &speed_right) {
   // fuzzification of orientation and distance
-  float right = triangular_MF(orientation, -320, -50);
+  float right = triangular_MF(orientation, -320 - 1e-10, -320, -50);
   float center = triangular_MF(orientation, -75, 75);
-  float left = triangular_MF(orientation, 50, 320);
-  float close = triangular_MF(distance, 0, 25);
+  float left = triangular_MF(orientation, 50, 320, 320 + 1e-10);
+  float close = triangular_MF(distance, -1e-10, 0, 25);
   float medium = triangular_MF(distance, 20, 50);
-  float far = triangular_MF(distance, 50, 90);
+  float far = triangular_MF(distance, 50, 90, 90 + 1e-10);
 
   // initializing of output possibilities
   float speed_left_very_low = 0;
@@ -98,7 +98,7 @@ void FIS(float orientation, float distance, float &speed_left, float &speed_righ
   speed_left_medium = max(speed_left_medium, rule4);
   speed_right_low = max(speed_right_low, rule4);
   direction_left = max(direction_left, rule4);
-  
+
   float rule5 = min(right, close);
   speed_left_very_low = max(speed_left_very_low, rule5);
   speed_right_low = max(speed_right_low, rule5);
@@ -108,7 +108,7 @@ void FIS(float orientation, float distance, float &speed_left, float &speed_righ
   speed_left_low = max(speed_left_low, rule6);
   speed_right_very_low = max(speed_right_very_low, rule6);
   direction_left = max(direction_left, rule6);
-  
+
   float rule7 = min(center, far);
   speed_left_high = max(speed_left_high, rule7);
   speed_right_high = max(speed_right_high, rule7);
@@ -118,7 +118,7 @@ void FIS(float orientation, float distance, float &speed_left, float &speed_righ
   speed_left_medium = max(speed_left_medium, rule8);
   speed_right_medium = max(speed_right_medium, rule8);
   direction_center = max(direction_center, rule8);
-  
+
   float rule9 = min(center, close);
   speed_left_low = max(speed_left_low, rule9);
   speed_right_low = max(speed_right_low, rule9);
@@ -132,57 +132,68 @@ void FIS(float orientation, float distance, float &speed_left, float &speed_righ
 
 // triangular membership function
 float triangular_MF(float x, float a, float c) {
-  float b = (a + c)/2;
-  if (x <= a) {
-    return 0;
-  } else if (a <= x && x <= b) {
-    return (x - a)/(b - a);
-  } else if (b <= x && x <= c) {
-    return (c - x)/(c - b);
-  } else {
-    return 0;
-  }
+  float b = (a + c) / 2;
+  float first_term = (x-a) / (b-a);
+  float second_term = (c-x) / (c-b);
+  float inner_term = first_term > 1? 1: first_term > second_term? second_term:first_term;
+  float final_membership = inner_term > 0? inner_term:0;
+  return final_membership;
+}
+// triangular membership function
+float triangular_MF(float x, float a, float b, float c) {  
+  float first_term = (x-a) / (b-a);
+  float second_term = (c-x) / (c-b);
+  float inner_term = first_term > 1? 1: first_term > second_term? second_term:first_term;
+  float final_membership = inner_term > 0? inner_term:0;
+  return final_membership;
 }
 
 // defuzzification using centroid method
-float defuzzification(float very_low, float medium, float high) {
-  if (low + medium + high == 0) {
-    return 0;
-  } else {
-    return ((very_low * 15) + (low * 57.5) + (medium * 122.5) + (high * 202.5))/(low + medium + high);
-  }
-}
+float defuzzification(float low, float medium, float high) {
+  float low_a = 111-1e-10;
+  float low_b = 111;
+  float low_c = 155;
+  float med_a = 140;
+  float med_b = 167.5;
+  float med_c = 195;
+  float high_a = 180;
+  float high_b = 255;
+  float high_c = 255+1+e-10;
 
-float defuzzification(float left, float center, float right) {
-  if (left + center + right == 0) {
-    return 320;
-  } else {
-    return ((left * 135) + (center * 320) + (right * 505))/(left + center + right);
-  }
+  float low1 = low*(low_b - low_a) + low_a;
+  float low2 = low_c - low*(low_c - low_b);
+
+  float med1 = med*(med_b - med_a) + med_a;
+  float med2 = med_c - med*(med_c - med_b);
+
+  float high1 = high*(high_b - high_a) + high_a;
+  float high2 = high_c - high*(high_c - high_b);
+
+  return (low1*low + low2*low + med1*med + med2*med + high1*high + high2*high) / (2*(low+med+high));
 }
 
 void moveForward(int intensity_A, int intensity_B) {
   // Motor A forward
   digitalWrite(in1_pin, LOW);
   digitalWrite(in2_pin, HIGH);
-  analogWrite(en1_pin, intensity_A); // Full speed
+  analogWrite(en1_pin, intensity_A);  // Full speed
 
   // Motor B forward
   digitalWrite(in3_pin, LOW);
   digitalWrite(in4_pin, HIGH);
-  analogWrite(en2_pin, intensity_B); // Full speed
+  analogWrite(en2_pin, intensity_B);  // Full speed
 }
 
 void moveBackward(int intensity_A, int intensity_B) {
   // Motor A backward
   digitalWrite(in1_pin, HIGH);
   digitalWrite(in2_pin, LOW);
-  analogWrite(en1_pin, intensity_A); // Full speed
+  analogWrite(en1_pin, intensity_A);  // Full speed
 
   // Motor B backward
   digitalWrite(in3_pin, HIGH);
   digitalWrite(in4_pin, LOW);
-  analogWrite(en2_pin, intensity_B); // Full speed
+  analogWrite(en2_pin, intensity_B);  // Full speed
 }
 
 void turnLeft(int intensity_A, int intensity_B) {
@@ -194,7 +205,7 @@ void turnLeft(int intensity_A, int intensity_B) {
   // Motor B forward
   digitalWrite(in3_pin, LOW);
   digitalWrite(in4_pin, HIGH);
-  analogWrite(en2_pin, intensity_B); // Full speed
+  analogWrite(en2_pin, intensity_B);  // Full speed
 }
 
 void turnRight(int intensity_A, int intensity_B) {
@@ -206,7 +217,7 @@ void turnRight(int intensity_A, int intensity_B) {
   // Motor A forward
   digitalWrite(in1_pin, LOW);
   digitalWrite(in2_pin, HIGH);
-  analogWrite(en1_pin, intensity_A); // Full speed
+  analogWrite(en1_pin, intensity_A);  // Full speed
 }
 
 void stopMotors() {
@@ -241,7 +252,7 @@ void setup() {
   pinMode(rightIRSensorPin, INPUT);
 
   // Attach interrupts to the IR sensor pins
-  attachInterrupt(digitalPinToInterrupt(leftIRSensorPin), leftWheelTick, RISING);  // Detect rising edge for the left wheel
+  attachInterrupt(digitalPinToInterrupt(leftIRSensorPin), leftWheelTick, RISING);    // Detect rising edge for the left wheel
   attachInterrupt(digitalPinToInterrupt(rightIRSensorPin), rightWheelTick, RISING);  // Detect rising edge for the right wheel
 
   // Initialize pins for motors
@@ -277,35 +288,35 @@ void loop() {
 
     // if there is a paired device, move using manual instructions
 
-    if (Serial.available()){
+    if (Serial.available()) {
       SerialBT.write(Serial.read());
     }
 
     if (SerialBT.available()) {
       Serial.write(SerialBT.read());
       delay(5);
-      char command = (char) SerialBT.read();
+      char command = (char)SerialBT.read();
       Serial.println(command);
 
       if (interruptFlag) {
-        stopMotors(); // Stop motors if interrupt flag is set
-        interruptFlag = false; // Clear the flag
+        stopMotors();           // Stop motors if interrupt flag is set
+        interruptFlag = false;  // Clear the flag
       }
 
       switch (command) {
-        case 'F': // Move forward
+        case 'F':  // Move forward
           moveForward(111, 111);
           break;
-        case 'B': // Move backward
+        case 'B':  // Move backward
           moveBackward(111, 111);
           break;
-        case 'L': // Turn left
+        case 'L':  // Turn left
           turnLeft(111, 111);
           break;
-        case 'R': // Turn right
+        case 'R':  // Turn right
           turnRight(111, 111);
           break;
-        case 'S': // Stop
+        case 'S':  // Stop
           stopMotors();
           break;
         default:
@@ -317,8 +328,8 @@ void loop() {
     Serial.println("No device is connected.");
 
     if (interruptFlag) {
-      stopMotors(); // Stop motors if interrupt flag is set
-      interruptFlag = false; // Clear the flag
+      stopMotors();           // Stop motors if interrupt flag is set
+      interruptFlag = false;  // Clear the flag
     }
     // get orientation and distance values from cam
     float orientation = 0;
@@ -335,11 +346,11 @@ void loop() {
       moveForward(speed_left, speed_right);
     }
   }
-  
+
   // Calculate the distances traveled by each wheel
   float leftWheelDistance = getDistance(leftWheelTicks, wheelRadius, ticksPerRevolution);
   float rightWheelDistance = getDistance(rightWheelTicks, wheelRadius, ticksPerRevolution);
-  
+
   // Print the distances to the Serial Monitor
   Serial.print("Left Wheel Distance: ");
   Serial.print(leftWheelDistance);
