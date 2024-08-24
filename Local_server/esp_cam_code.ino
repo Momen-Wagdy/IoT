@@ -108,9 +108,11 @@ void loop() {
 }
 
 String sendPhoto() {
-  String getAll;
-  String getBody;
-
+  String response;
+  String statusLine;
+  String headers;
+  String body;
+  
   camera_fb_t * fb = NULL;
   fb = esp_camera_fb_get();
   if(!fb) {
@@ -153,32 +155,32 @@ String sendPhoto() {
     
     esp_camera_fb_return(fb);
     
-    int timoutTimer = 10000;
+    int timeoutTimer = 10000;
     long startTimer = millis();
     boolean state = false;
     
-    while ((startTimer + timoutTimer) > millis()) {
-      Serial.print(".");
-      delay(100);      
-      while (client.available()) {
-        char c = client.read();
-        if (c == '\n') {
-          if (getAll.length()==0) { state=true; }
-          getAll = "";
+    while ((startTimer + timeoutTimer) > millis()) {
+      if (client.available()) {
+        String line = client.readStringUntil('\n');
+        if (statusLine.length() == 0) {
+          statusLine = line; // First line is the status line
+        } else if (line.length() <= 2) {
+          state = true; // Empty line, end of headers
+        } else if (state) {
+          body += line + "\n"; // Collect body after headers
+        } else {
+          headers += line + "\n"; // Collect headers
         }
-        else if (c != '\r') { getAll += String(c); }
-        if (state==true) { getBody += String(c); }
         startTimer = millis();
       }
-      if (getBody.length()>0) { break; }
     }
-    Serial.println();
+    
     client.stop();
-    Serial.println(getBody);
+    Serial.write(body.c_str());
+
+    return body; // Return the response body
+  } else {
+    Serial.write("505");
+    return response;
   }
-  else {
-    getBody = "Connection to " + serverName +  " failed.";
-    Serial.println(getBody);
-  }
-  return getBody;
 }
