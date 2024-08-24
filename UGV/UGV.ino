@@ -1,4 +1,5 @@
-#include <BluetoothSerial.h>
+#include <BluetoothSerial.h>  // Add the missing #
+
 BluetoothSerial SerialBT;
 
 // Motor A
@@ -10,9 +11,9 @@ int in3_pin = 4;
 int in4_pin = 16;
 int en2_pin = 17;
 
-// IR front and back word 
-int IR_F = 0 ; // ADD BINS
-int IR_B = 0 ;
+// IR front and back word
+int IR_F = 5;  // Replace with actual GPIO pin numbers for the front IR sensor
+int IR_B = 18; // Replace with actual GPIO pin numbers for the back IR sensor
 
 // Flag to interrupt motor control
 volatile bool interruptFlag = false;
@@ -138,11 +139,12 @@ void stopMotors() {
   analogWrite(en2_pin, 0);
 }
 
-// Function the run automatic when detecting any ir sensor going low 
+// Function that runs automatically when detecting any IR sensor going low
 void onSensorChange() {
- if (Front_sensor == LOW && Back_sensor == High) {
-   moveBackward(111);
-  } else if (Front_sensor == HIGH && Back_sensor == LOW) {
-   moveForword(111);
+  interruptFlag = true;
+  if (digitalRead(IR_F) == LOW && digitalRead(IR_B) == HIGH) {
+    moveBackward(111);
+  } else if (digitalRead(IR_F) == HIGH && digitalRead(IR_B) == LOW) {
+    moveForward(111);
   }
-  }
+}
