@@ -147,6 +147,14 @@ float triangular_MF(float x, float a, float b, float c) {
   float final_membership = inner_term > 0? inner_term:0;
   return final_membership;
 }
+// triangular membership function
+float trapizoidal_MF(float x, float a, float b, float c, float d) {  
+  float first_term = (x-a) / (b-a);
+  float second_term = (d-x) / (d-c);
+  float inner_term = first_term > 1? 1: first_term > second_term? second_term:first_term;
+  float final_membership = inner_term > 0? inner_term:0;
+  return final_membership;
+}
 
 // defuzzification using centroid method
 float defuzzification(float low, float medium, float high) {
