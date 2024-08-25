@@ -4,10 +4,10 @@
 #include "soc/rtc_cntl_reg.h"
 #include "esp_camera.h"
 
-const char* ssid = "WE2020";
-const char* password = "epic2023";
+const char* ssid = "m";
+const char* password = "11111111";
 
-String serverName = "192.168.1.10";   // REPLACE WITH YOUR Raspberry Pi IP ADDRESS
+String serverName = "192.168.67.72";   // REPLACE WITH YOUR Raspberry Pi IP ADDRESS
 //String serverName = "example.com";   // OR REPLACE WITH YOUR DOMAIN NAME
 
 String serverPath = "/";     // The default serverPath should be upload.php
@@ -35,7 +35,7 @@ WiFiClient client;
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
 
-const int timerInterval = 30000;    // time between each HTTP POST image
+const int timerInterval = 300;    // time between each HTTP POST image
 unsigned long previousMillis = 0;   // last time image was sent
 
 void setup() {
@@ -43,17 +43,10 @@ void setup() {
   Serial.begin(115200);
 
   WiFi.mode(WIFI_STA);
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
   WiFi.begin(ssid, password);  
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
     delay(500);
   }
-  Serial.println();
-  Serial.print("ESP32-CAM IP Address: ");
-  Serial.println(WiFi.localIP());
 
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -91,7 +84,6 @@ void setup() {
   // camera init
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
-    Serial.printf("Camera init failed with error 0x%x", err);
     delay(1000);
     ESP.restart();
   }
@@ -121,10 +113,8 @@ String sendPhoto() {
     ESP.restart();
   }
   
-  Serial.println("Connecting to server: " + serverName);
 
   if (client.connect(serverName.c_str(), serverPort)) {
-    Serial.println("Connection successful!");    
     String head = "--RandomNerdTutorials\r\nContent-Disposition: form-data; name=\"imageFile\"; filename=\"esp32-cam.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
     String tail = "\r\n--RandomNerdTutorials--\r\n";
 
@@ -155,7 +145,7 @@ String sendPhoto() {
     
     esp_camera_fb_return(fb);
     
-    int timeoutTimer = 10000;
+    int timeoutTimer = 300;
     long startTimer = millis();
     boolean state = false;
     
