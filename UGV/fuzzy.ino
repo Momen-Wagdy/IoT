@@ -55,109 +55,110 @@ float getDistance(long ticks, float wheelRadius, int ticksPerRevolution) {
   return distance;  // Return distance in meters
 }
 
-// fuzzy interference system
-void FIS(float orientation, float distance, float &speed_left, float &speed_right) {
-  // fuzzification of orientation and distance
-  float right = triangular_MF(orientation, -320 - 1e-10, -320, -50);
-  float center = triangular_MF(orientation, -75, 75);
-  float left = triangular_MF(orientation, 50, 320, 320 + 1e-10);
-  float close = triangular_MF(distance, -1e-10, 0, 25);
-  float medium = triangular_MF(distance, 20, 50);
-  float far = triangular_MF(distance, 50, 90, 90 + 1e-10);
+void FIS(float orientation, float distance) {
+    // Fuzzification of orientation and distance
+    float right = trapizoidal_MF(orientation, 0, 1, 120, 240);
+    float center = triangular_MF(orientation, 230, 410);
+    float left = trapizoidal_MF(orientation, 390,480, 640, 641);
+    float close = trapizoidal_MF(distance, 0., 0.1, 15,25);
+    float medium = triangular_MF(distance, 20, 55);
+    float far = trapizoidal_MF(distance, 50,70, 90, 120);
 
-  // initializing of output possibilities
-  float speed_left_very_low = 0;
-  float speed_left_low = 0;
-  float speed_left_medium = 0;
-  float speed_left_high = 0;
-  float speed_right_very_low = 0;
-  float speed_right_low = 0;
-  float speed_right_medium = 0;
-  float speed_right_high = 0;
-  float direction_left = 0;
-  float direction_center = 0;
-  float direction_right = 0;
+    // Initialize output possibilities
+    float speed_left_very_low = 0;
+    float speed_left_low = 0;
+    float speed_left_medium = 0;
+    float speed_left_high = 0;
+    float speed_right_very_low = 0;
+    float speed_right_low = 0;
+    float speed_right_medium = 0;
+    float speed_right_high = 0;
+    float direction_left = 0;
+    float direction_center = 0;
+    float direction_right = 0;
 
-  // applying the fuzzy rules
-  float rule1 = min(right, far);
-  speed_left_medium = max(speed_left_medium, rule1);
-  speed_right_high = max(speed_right_high, rule1);
-  direction_right = max(direction_right, rule1);
+    // Apply fuzzy rules
+    float rule1 = min(right, far);
+    speed_left_medium = max(speed_left_medium, rule1);
+    speed_right_high = max(speed_right_high, rule1);
+    direction_right = max(direction_right, rule1);
 
-  float rule2 = min(left, far);
-  speed_left_high = max(speed_left_high, rule2);
-  speed_right_medium = max(speed_right_medium, rule2);
-  direction_left = max(direction_left, rule2);
+    float rule2 = min(left, far);
+    speed_left_high = max(speed_left_high, rule2);
+    speed_right_medium = max(speed_right_medium, rule2);
+    direction_left = max(direction_left, rule2);
 
-  float rule3 = min(right, medium);
-  speed_left_low = max(speed_left_low, rule3);
-  speed_right_medium = max(speed_right_medium, rule3);
-  direction_right = max(direction_right, rule3);
+    float rule3 = min(right, medium);
+    speed_left_low = max(speed_left_low, rule3);
+    speed_right_medium = max(speed_right_medium, rule3);
+    direction_right = max(direction_right, rule3);
 
-  float rule4 = min(left, medium);
-  speed_left_medium = max(speed_left_medium, rule4);
-  speed_right_low = max(speed_right_low, rule4);
-  direction_left = max(direction_left, rule4);
+    float rule4 = min(left, medium);
+    speed_left_medium = max(speed_left_medium, rule4);
+    speed_right_low = max(speed_right_low, rule4);
+    direction_left = max(direction_left, rule4);
 
-  float rule5 = min(right, close);
-  speed_left_very_low = max(speed_left_very_low, rule5);
-  speed_right_low = max(speed_right_low, rule5);
-  direction_right = max(direction_right, rule5);
+    float rule5 = min(right, close);
+    speed_left_very_low = max(speed_left_very_low, rule5);
+    speed_right_low = max(speed_right_low, rule5);
+    direction_right = max(direction_right, rule5);
 
-  float rule6 = min(left, close);
-  speed_left_low = max(speed_left_low, rule6);
-  speed_right_very_low = max(speed_right_very_low, rule6);
-  direction_left = max(direction_left, rule6);
+    float rule6 = min(left, close);
+    speed_left_low = max(speed_left_low, rule6);
+    speed_right_very_low = max(speed_right_very_low, rule6);
+    direction_left = max(direction_left, rule6);
 
-  float rule7 = min(center, far);
-  speed_left_high = max(speed_left_high, rule7);
-  speed_right_high = max(speed_right_high, rule7);
-  direction_center = max(direction_center, rule7);
+    float rule7 = min(center, far);
+    speed_left_high = max(speed_left_high, rule7);
+    speed_right_high = max(speed_right_high, rule7);
+    direction_center = max(direction_center, rule7);
 
-  float rule8 = min(center, medium);
-  speed_left_medium = max(speed_left_medium, rule8);
-  speed_right_medium = max(speed_right_medium, rule8);
-  direction_center = max(direction_center, rule8);
+    float rule8 = min(center, medium);
+    speed_left_medium = max(speed_left_medium, rule8);
+    speed_right_medium = max(speed_right_medium, rule8);
+    direction_center = max(direction_center, rule8);
 
-  float rule9 = min(center, close);
-  speed_left_low = max(speed_left_low, rule9);
-  speed_right_low = max(speed_right_low, rule9);
-  direction_center = max(direction_center, rule9);
+    float rule9 = min(center, close);
+    speed_left_low = max(speed_left_low, rule9);
+    speed_right_low = max(speed_right_low, rule9);
+    direction_center = max(direction_center, rule9);
 
-  // using defuzzification to get the crisp output for motors' speed and direction
-  speed_left = defuzzification(speed_left_very_low, speed_left_low, speed_left_medium, speed_left_high);
-  speed_right = defuzzification(speed_right_very_low, speed_right_low, speed_right_medium, speed_right_high);
-  direction = defuzzification(direction_left, direction_center, direction_right);
+    speed_left = defuzzification(speed_left_low, speed_left_medium, speed_left_high);
+    speed_right = defuzzification(speed_right_low, speed_right_medium, speed_right_high);
+    direction = defuzzification(direction_left, direction_center, direction_right);
+
 }
 
 // triangular membership function
 float triangular_MF(float x, float a, float c) {
-  float b = (a + c) / 2;
-  float first_term = (x-a) / (b-a);
-  float second_term = (c-x) / (c-b);
-  float inner_term = first_term > 1? 1: first_term > second_term? second_term:first_term;
-  float final_membership = inner_term > 0? inner_term:0;
-  return final_membership;
-}
-// triangular membership function
-float triangular_MF(float x, float a, float b, float c) {  
-  float first_term = (x-a) / (b-a);
-  float second_term = (c-x) / (c-b);
-  float inner_term = first_term > 1? 1: first_term > second_term? second_term:first_term;
-  float final_membership = inner_term > 0? inner_term:0;
-  return final_membership;
-}
-// triangular membership function
-float trapizoidal_MF(float x, float a, float b, float c, float d) {  
-  float first_term = (x-a) / (b-a);
-  float second_term = (d-x) / (d-c);
-  float inner_term = first_term > 1? 1: first_term > second_term? second_term:first_term;
-  float final_membership = inner_term > 0? inner_term:0;
-  return final_membership;
+    float b = (a + c) / 2;
+    if (x <= a || x >= c) return 0;
+    if (x == b) return 1;
+    return (x < b) ? (x - a) / (b - a) : (c - x) / (c - b);
 }
 
+// triangular membership function
+float triangular_MF(float x, float a, float b, float c) {
+    if (x <= a || x >= c) return 0;
+    if (x == b) return 1;
+    return (x < b) ? (x - a) / (b - a) : (c - x) / (c - b);
+}
+
+// Triangular membership function
+float trapizoidal_MF(float x, float a, float b, float c, float d) {
+    if (x <= a || x >= d) {
+        return 0.0;  // Outside the trapezoid
+    } else if (x >= b && x <= c) {
+        return 1.0;  // Top flat part of the trapezoid
+    } else if (x > a && x < b) {
+        return (x - a) / (b - a);  // Rising edge
+    } else if (x > c && x < d) {
+        return (d - x) / (d - c);  // Falling edge
+    }
+    return 0.0;  // Should never reach here, but just in case
+}
 // defuzzification using centroid method
-float defuzzification(float low, float medium, float high) {
+float defuzzification(float low, float med, float high) {
   float low_a = 111-1e-10;
   float low_b = 111;
   float low_c = 155;
@@ -166,7 +167,7 @@ float defuzzification(float low, float medium, float high) {
   float med_c = 195;
   float high_a = 180;
   float high_b = 255;
-  float high_c = 255+1+e-10;
+  float high_c = 255+1e-10;
 
   float low1 = low*(low_b - low_a) + low_a;
   float low2 = low_c - low*(low_c - low_b);
@@ -240,9 +241,11 @@ void stopMotors() {
 void onSensorChange() {
   interruptFlag = true;
   if (digitalRead(IR_F) == LOW && digitalRead(IR_B) == HIGH) {
-    moveBackward(111, 111);
+    moveBackward(255, 255);
+    moveBackward(255, 255);
   } else if (digitalRead(IR_F) == HIGH && digitalRead(IR_B) == LOW) {
-    moveForward(111, 111);
+    moveBackward(255, 255);
+    moveForward(255, 255);
   }
 }
 
@@ -333,38 +336,57 @@ void loop() {
       }
     }
   } else {
-    Serial.println("No device is connected.");
+    if (Serial.available() > 0) {
+        String distanceData = "";
+        String orientationData = "";
+        bool readD = false;
+         // A string to hold incoming data
+        while (Serial.available() > 0) {
+            char incomingByte = Serial.read();
+            if  (incomingByte == '|') readD = true;
+            else if (readD){
+              distanceData += incomingByte;
+            }
+            else{
+            orientationData += incomingByte;       // Append the byte to the string
+            }
+            delay(2); // Small delay to ensure all characters are read (optional, depending on your setup)
+        }
+        Serial.println(orientationData);
+        Serial.println(distanceData);
+        // Example: If you expect orientation and distance values
+        float orientation = orientationData.toFloat();
+        float distance = distanceData.toFloat();
 
-    if (interruptFlag) {
-      stopMotors();           // Stop motors if interrupt flag is set
-      interruptFlag = false;  // Clear the flag
-    }
-    // get orientation and distance values from cam
-    float orientation = 0;
-    float distance = 0;
+        // If an interrupt flag is set, stop motors
+        if (interruptFlag) {
+            stopMotors();
+            interruptFlag = false;
+        }
 
-    // if there is no paired device, work using fuzzy inference system
-    FIS(orientation, distance, speed_left, speed_right);
+        // If no paired device, work using the fuzzy inference system
+        FIS(orientation, distance);
 
-    if (distance < 245) {
-      turnLeft(speed_left, speed_right);
-    } else if (distance > 395) {
-      turnRight(speed_left, speed_right);
-    } else {
-      moveForward(speed_left, speed_right);
+        // Control the robot based on orientation and distance
+        if (orientation < 230) {
+            turnLeft(speed_left, speed_right);
+        } else if (distance > 410) {
+            turnRight(speed_left, speed_right);
+        } else {
+            moveForward(speed_left, speed_right);
+        }
+
+        // Calculate and print the distances traveled by each wheel
+        float leftWheelDistance = getDistance(leftWheelTicks, wheelRadius, ticksPerRevolution);
+        float rightWheelDistance = getDistance(rightWheelTicks, wheelRadius, ticksPerRevolution);
+
+        Serial.print("Left Wheel Distance: ");
+        Serial.print(leftWheelDistance);
+        Serial.println(" meters");
+
+        Serial.print("Right Wheel Distance: ");
+        Serial.print(rightWheelDistance);
+        Serial.println(" meters");
     }
   }
-
-  // Calculate the distances traveled by each wheel
-  float leftWheelDistance = getDistance(leftWheelTicks, wheelRadius, ticksPerRevolution);
-  float rightWheelDistance = getDistance(rightWheelTicks, wheelRadius, ticksPerRevolution);
-
-  // Print the distances to the Serial Monitor
-  Serial.print("Left Wheel Distance: ");
-  Serial.print(leftWheelDistance);
-  Serial.println(" meters");
-
-  Serial.print("Right Wheel Distance: ");
-  Serial.print(rightWheelDistance);
-  Serial.println(" meters");
 }
