@@ -178,6 +178,8 @@ float defuzzification(float low, float med, float high) {
   float high1 = high*(high_b - high_a) + high_a;
   float high2 = high_c - high*(high_c - high_b);
 
+  if (low+med+high == 0) return 0;
+
   return (low1*low + low2*low + med1*med + med2*med + high1*high + high2*high) / (2*(low+med+high));
 }
 
@@ -338,7 +340,6 @@ void loop() {
     }
   } else{
     if (Serial1.available() > 0) {
-      Serial.println("Here");
         String distanceData = "";
         String orientationData = "";
         bool readD = false;
@@ -352,10 +353,9 @@ void loop() {
             else{
             orientationData += incomingByte;       // Append the byte to the string
             }
-            Serial.println(incomingByte);
+            
         }
-        Serial.println(orientationData);
-        Serial.println(distanceData);
+
         // Example: If you expect orientation and distance values
         float orientation = orientationData.toFloat();
         float distance = distanceData.toFloat();
@@ -382,13 +382,13 @@ void loop() {
         float leftWheelDistance = getDistance(leftWheelTicks, wheelRadius, ticksPerRevolution);
         float rightWheelDistance = getDistance(rightWheelTicks, wheelRadius, ticksPerRevolution);
 
-        Serial.print("Left Wheel Distance: ");
-        Serial.print(leftWheelDistance);
-        Serial.println(" meters");
+        Serial.print("Left Intensity: ");
+        Serial.print(speed_left);
+        Serial.println(" fuzzs");
 
-        Serial.print("Right Wheel Distance: ");
-        Serial.print(rightWheelDistance);
-        Serial.println(" meters");
+        Serial.print("Right Intensity: ");
+        Serial.print(speed_right);
+        Serial.println(" fuzzs");
     } else{
       
     stopMotors();  
