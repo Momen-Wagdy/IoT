@@ -245,7 +245,7 @@ void onSensorChange() {
   if (digitalRead(IR_F) == LOW && digitalRead(IR_B) == HIGH) {
     moveBackward(111, 111);
   } else if (digitalRead(IR_F) == HIGH && digitalRead(IR_B) == LOW) {
-    moveBackward(111, 111);
+    moveForward(111, 111);
   }
 }
 
@@ -364,19 +364,20 @@ void loop() {
             stopMotors();
             interruptFlag = false;
         }
-
+        int speedR = (int) speed_right;
+        int speedL = (int) speed_left;
         // If no paired device, work using the fuzzy inference system
         FIS(orientation, distance);
 
         // Control the robot based on orientation and distance
         if (orientation < 230) {
-            turnLeft(speed_left, speed_right);
+            turnLeft(speedL,speedR);
             Serial.print("L");
         } else if (distance > 410) {
-            turnRight(speed_left, speed_right);
+            turnRight(speedL, speedR);
             Serial.print("R");
         } else {
-            moveForward(speed_left, speed_right);
+            moveForward(speedL,speedR);
             Serial.print("F");
         }
 
