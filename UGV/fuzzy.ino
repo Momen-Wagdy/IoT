@@ -337,8 +337,8 @@ void loop() {
       }
     }
   } else{
-    if (Serial1.available() > 0) {
-        String distanceData = "";
+    if (Serial1.available() > 0 ) {
+      String distanceData = "";
         String orientationData = "";
         bool readD = false;
          // A string to hold incoming data
@@ -351,6 +351,8 @@ void loop() {
             else{
             orientationData += incomingByte;       // Append the byte to the string
             }
+
+   
             
         }
         Serial.println(orientationData);
@@ -371,13 +373,22 @@ void loop() {
 
         // Control the robot based on orientation and distance
         if (orientation < 230) {
+            for (int i = 0; i < 150000; i++){
             turnLeft(speedL,speedR);
+            }
             Serial.print("L");
         } else if (distance > 410) {
+          for (int i = 0; i < 150000; i++){
             turnRight(speedL, speedR);
+            }
+            
             Serial.print("R");
         } else {
+          for (int i = 0; i < 150000; i++){
+            
             moveForward(speedL,speedR);
+            }
+            
             Serial.print("F");
         }
 
@@ -386,11 +397,11 @@ void loop() {
         float rightWheelDistance = getDistance(rightWheelTicks, wheelRadius, ticksPerRevolution);
 
         Serial.print("Left Intensity: ");
-        Serial.print(speed_left);
+        Serial.print(speedL);
         Serial.println(" fuzzs");
 
         Serial.print("Right Intesity: ");
-        Serial.print(speed_right);
+        Serial.print(speedR);
         Serial.println(" fuzzs");
     } else{
       
