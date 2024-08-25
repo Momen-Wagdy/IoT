@@ -251,6 +251,7 @@ void onSensorChange() {
 
 void setup() {
   Serial.begin(115200);
+  Serial1.begin(115200, SERIAL_8N1,9,10);
 
   if (!SerialBT.begin("esp32")) {  // Check if Bluetooth starts properly
     Serial.println("An error occurred initializing Bluetooth");
@@ -336,13 +337,14 @@ void loop() {
       }
     }
   } else{
-    if (Serial.available() > 0) {
+    if (Serial1.available() > 0) {
+      Serial.println("Here");
         String distanceData = "";
         String orientationData = "";
         bool readD = false;
          // A string to hold incoming data
-        while (Serial.available() > 0) {
-            char incomingByte = Serial.read();
+        while (Serial1.available() > 0) {
+            char incomingByte = Serial1.read();
             if  (incomingByte == '|') readD = true;
             else if (readD){
               distanceData += incomingByte;
