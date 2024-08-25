@@ -243,17 +243,15 @@ void stopMotors() {
 void onSensorChange() {
   interruptFlag = true;
   if (digitalRead(IR_F) == LOW && digitalRead(IR_B) == HIGH) {
-    moveBackward(255, 255);
-    moveBackward(255, 255);
+    moveBackward(111, 111);
   } else if (digitalRead(IR_F) == HIGH && digitalRead(IR_B) == LOW) {
-    moveBackward(255, 255);
-    moveForward(255, 255);
+    moveBackward(111, 111);
   }
 }
 
 void setup() {
   Serial.begin(115200);
-  Serial1.begin(115200, SERIAL_8N1,9,10);
+  Serial1.begin(115200, SERIAL_8N1,14,12);
 
   if (!SerialBT.begin("esp32")) {  // Check if Bluetooth starts properly
     Serial.println("An error occurred initializing Bluetooth");
@@ -355,7 +353,8 @@ void loop() {
             }
             
         }
-
+        Serial.println(orientationData);
+        Serial.println(distanceData);
         // Example: If you expect orientation and distance values
         float orientation = orientationData.toFloat();
         float distance = distanceData.toFloat();
@@ -372,10 +371,13 @@ void loop() {
         // Control the robot based on orientation and distance
         if (orientation < 230) {
             turnLeft(speed_left, speed_right);
+            Serial.print("L");
         } else if (distance > 410) {
             turnRight(speed_left, speed_right);
+            Serial.print("R");
         } else {
             moveForward(speed_left, speed_right);
+            Serial.print("F");
         }
 
         // Calculate and print the distances traveled by each wheel
@@ -386,7 +388,7 @@ void loop() {
         Serial.print(speed_left);
         Serial.println(" fuzzs");
 
-        Serial.print("Right Intensity: ");
+        Serial.print("Right Intesity: ");
         Serial.print(speed_right);
         Serial.println(" fuzzs");
     } else{
