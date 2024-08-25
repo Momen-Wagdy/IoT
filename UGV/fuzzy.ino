@@ -335,7 +335,7 @@ void loop() {
           break;
       }
     }
-  } else {
+  } else{
     if (Serial.available() > 0) {
         String distanceData = "";
         String orientationData = "";
@@ -350,7 +350,7 @@ void loop() {
             else{
             orientationData += incomingByte;       // Append the byte to the string
             }
-            delay(2); // Small delay to ensure all characters are read (optional, depending on your setup)
+            Serial.println(incomingByte);
         }
         Serial.println(orientationData);
         Serial.println(distanceData);
@@ -387,6 +387,10 @@ void loop() {
         Serial.print("Right Wheel Distance: ");
         Serial.print(rightWheelDistance);
         Serial.println(" meters");
+    } else{
+      
+    stopMotors();  
+      
     }
   }
 }
