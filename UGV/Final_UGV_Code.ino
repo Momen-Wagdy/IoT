@@ -79,6 +79,7 @@ float getDistance(long ticks, float wheelRadius, int ticksPerRevolution) {
   return distance;  // Return distance in meters
 }
 
+// Fuzzy inference system
 void FIS(float orientation, float distance) {
     // Fuzzification of orientation and distance
     float right = trapizoidal_MF(orientation, 0, 1, 120, 240);
@@ -102,58 +103,68 @@ void FIS(float orientation, float distance) {
     float direction_right = 0;
 
     // Apply fuzzy rules
+    // If orientation is right and distance is far then direction is right, left motor's rotation speed is medium and right motor's rotation speed is high 
     float rule1 = min(right, far);
     speed_left_medium = max(speed_left_medium, rule1);
     speed_right_high = max(speed_right_high, rule1);
     direction_right = max(direction_right, rule1);
 
+    // If orientation is left and distance is far then direction is left, left motor's rotation speed is high and right motor's rotation speed is medium
     float rule2 = min(left, far);
     speed_left_high = max(speed_left_high, rule2);
     speed_right_medium = max(speed_right_medium, rule2);
     direction_left = max(direction_left, rule2);
 
+    // If orientation is right and distance is medium then direction is right, left motor's rotation speed is low and right motor's rotation speed is medium
     float rule3 = min(right, medium);
     speed_left_low = max(speed_left_low, rule3);
     speed_right_medium = max(speed_right_medium, rule3);
     direction_right = max(direction_right, rule3);
 
+    // If orientation is left and distance is medium then direction is left, left motor's rotation speed is medium and right motor's rotation speed is low
     float rule4 = min(left, medium);
     speed_left_medium = max(speed_left_medium, rule4);
     speed_right_low = max(speed_right_low, rule4);
     direction_left = max(direction_left, rule4);
 
+    // If orientation is right and distance is close then direction is right, left motor's rotation speed is very low and right motor's rotation speed is low
     float rule5 = min(right, close);
     speed_left_very_low = max(speed_left_very_low, rule5);
     speed_right_low = max(speed_right_low, rule5);
     direction_right = max(direction_right, rule5);
 
+    // If orientation is left and distance is close then direction is left, left motor's rotation speed is low and right motor's rotation speed is very low
     float rule6 = min(left, close);
     speed_left_low = max(speed_left_low, rule6);
     speed_right_very_low = max(speed_right_very_low, rule6);
     direction_left = max(direction_left, rule6);
 
+    // If orientation is center and distance is far then direction is center, left motor's rotation speed is high and right motor's rotation speed is high
     float rule7 = min(center, far);
     speed_left_high = max(speed_left_high, rule7);
     speed_right_high = max(speed_right_high, rule7);
     direction_center = max(direction_center, rule7);
 
+    // If orientation is center and distance is medium then direction is center, left motor's rotation speed is medium and right motor's rotation speed is medium
     float rule8 = min(center, medium);
     speed_left_medium = max(speed_left_medium, rule8);
     speed_right_medium = max(speed_right_medium, rule8);
     direction_center = max(direction_center, rule8);
 
+    // If orientation is center and distance is close then direction is center, left motor's rotation speed is low and right motor's rotation speed is low
     float rule9 = min(center, close);
     speed_left_low = max(speed_left_low, rule9);
     speed_right_low = max(speed_right_low, rule9);
     direction_center = max(direction_center, rule9);
 
+    // Defuzzification to get the final crisp output values using center of gravity method
     speed_left = defuzzification(speed_left_low, speed_left_medium, speed_left_high);
     speed_right = defuzzification(speed_right_low, speed_right_medium, speed_right_high);
     direction = defuzzification(direction_left, direction_center, direction_right);
 
 }
 
-// triangular membership function
+// Symmetric triangular membership function
 float triangular_MF(float x, float a, float c) {
     float b = (a + c) / 2;
     if (x <= a || x >= c) return 0;
@@ -161,7 +172,7 @@ float triangular_MF(float x, float a, float c) {
     return (x < b) ? (x - a) / (b - a) : (c - x) / (c - b);
 }
 
-// triangular membership function
+// Asymmetric triangular membership function
 float triangular_MF(float x, float a, float b, float c) {
     if (x <= a || x >= c) return 0;
     if (x == b) return 1;
@@ -183,6 +194,8 @@ float trapizoidal_MF(float x, float a, float b, float c, float d) {
 }
 // defuzzification using centroid method
 float defuzzification(float low, float med, float high) {
+  // Fuzzy ranges for motor speeds
+  // The speeds use a triangular membership function
   float low_a = 111-1e-10;
   float low_b = 111;
   float low_c = 155;
@@ -193,6 +206,8 @@ float defuzzification(float low, float med, float high) {
   float high_b = 255;
   float high_c = 255+1e-10;
 
+  // Solve the inverse for membership functions
+
   float low1 = low*(low_b - low_a) + low_a;
   float low2 = low_c - low*(low_c - low_b);
 
@@ -202,8 +217,10 @@ float defuzzification(float low, float med, float high) {
   float high1 = high*(high_b - high_a) + high_a;
   float high2 = high_c - high*(high_c - high_b);
 
+  // Returns 0 if values are out of bound
   if (low+med+high == 0) return 0;
 
+  // Uses center of gravity weighted mean to calculate wheels speed
   return (low1*low + low2*low + med1*med + med2*med + high1*high + high2*high) / (2*(low+med+high));
 }
 
@@ -276,40 +293,53 @@ void onSensorChange() {
 void setup() {
 
   delay(10);
+
+  // Begin WiFi connection
   WiFi.begin(ssid, password);
+  // Tries to connect to WiFi
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
+  // Sets ESP communication as insecure, MQTT does not work otherwise
   espClient.setInsecure();
   Serial.println("Connected.");
+  // Set data for MQTT client
   client.setServer(mqtt_broker, mqttPort);
   
+  // Connects to MQTT client
   while (!client.connected()) {
       Serial.print("Connecting to MQTT Broker...");
+      // ID to connect to client with
       String client_id = "esp32-client-" + String(WiFi.macAddress());
+      // Tries to connect using given username and password
       if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
           Serial.println("Connected to MQTT Broker");
       } else {
+          // If connection fails, log the error code  
           Serial.print("Failed with state ");
           Serial.print(client.state());
           delay(2000);
       }
   }
 
+  // Begins serial printing
   Serial.begin(115200);
   // Start serial communication with ESPCam over RX2 and TX2
   Serial1.begin(115200, SERIAL_8N1,14,12);
 
+  // Starts bluetooth serial
   if (!SerialBT.begin("esp32")) {  // Check if Bluetooth starts properly
     Serial.println("An error occurred initializing Bluetooth");
   } else {
     Serial.println("Bluetooth initialized. Device is ready to pair.");
   }
 
-  // Set IR sensor pins as input
-  pinMode(leftIRSensorPin, INPUT);
-  pinMode(rightIRSensorPin, INPUT);
+  // Sets econder IR sensor pins as input
+  pinMode(FrontleftIRSensorPin, INPUT);
+  pinMode(FrontRightIRSensorPin, INPUT);
+  pinMode(BackleftIRSensorPin, INPUT);
+  pinMode(BackRightIRSensorPin, INPUT);
 
   // Attach interrupts to the IR sensor pins
   attachInterrupt(digitalPinToInterrupt(FrontleftIRSensorPin), leftWheelTick, RISING);    // Detect rising edge for the left wheel
@@ -326,6 +356,7 @@ void setup() {
   pinMode(in4_pin, OUTPUT);
   pinMode(enb_pin, OUTPUT);
 
+  // Set all motor pins as low
   digitalWrite(in1_pin, LOW);
   digitalWrite(in2_pin, LOW);
   digitalWrite(ena_pin, LOW);
@@ -339,25 +370,25 @@ void setup() {
   pinMode(IR_F, INPUT);
   pinMode(IR_B, INPUT);
 
-  // Attach interrupts to IR sensors
+  // Attach interrupts to front and back IR sensors
   attachInterrupt(digitalPinToInterrupt(IR_F), onSensorChange, FALLING);
   attachInterrupt(digitalPinToInterrupt(IR_B), onSensorChange, FALLING);
 }
 
 void loop() {
+  // If there is a paired device, move using manual instructions
   if (SerialBT.hasClient()) {
-    Serial.println("a device is paired");
-
-    // if there is a paired device, move using manual instructions
+    
+    // Send data between serial and bluetooth to keep the conncetion alive
     if (Serial.available()) {
       SerialBT.write(Serial.read());
     }
-
     if (SerialBT.available()) {
       Serial.write(SerialBT.read());
       delay(5);
+
+      // Reads the sent command
       char command = (char)SerialBT.read();
-      Serial.println(command);
 
       if (interruptFlag) {
         stopMotors();           // Stop motors if interrupt flag is set
@@ -388,10 +419,14 @@ void loop() {
   } else{
     // Reads data from ESPCam attached over serial on RX2 and TX2
     if (Serial1.available() > 0 ) {
+        // Strings to read serial data
         String distanceData = "";
         String orientationData = "";
+        // Flag to determine which variable is being read
         bool readD = false;
+        // Loops while the serial communication has data
         while (Serial1.available() > 0) {
+            // Reads the serial character
             char incomingByte = Serial1.read();
             if  (incomingByte == '|') readD = true;
             else if (readD){
@@ -401,8 +436,8 @@ void loop() {
               orientationData += incomingByte;       // Append the byte to the string
             }            
         }
-        Serial.println(orientationData);
-        Serial.println(distanceData);
+
+        // Convert read data to floats
         float orientation = orientationData.toFloat();
         float distance = distanceData.toFloat();
 
@@ -411,32 +446,29 @@ void loop() {
             stopMotors();
             interruptFlag = false;
         }
+        // Convert defuzzified valeus to integer
         int speedR = (int) speed_right;
         int speedL = (int) speed_left;
-        // If no paired device, work using the fuzzy inference system
+
+        // Calculate the speeds using the inference system
         FIS(orientation, distance);
 
-        // Control the robot based on orientation and distance
+        // Control the robot based on orientation and fuzzy values
+        // The center of the image is at 320,320
         if (orientation < 230) {
             for (int i = 0; i < 150000; i++){
             turnLeft(speedL,speedR);
             }
-            Serial.print("L");
         } else if (distance > 410) {
           for (int i = 0; i < 150000; i++){
             turnRight(speedL, speedR);
             }
-            
-            Serial.print("R");
         } else {
           for (int i = 0; i < 150000; i++){
-            
             moveForward(speedL,speedR);
             }
-            
-            Serial.print("F");
         }
-
+        // Publish fuzzy data to MQTT
         client.publish(right_Fuzzy_topic, String(speedR).c_str());
         client.publish(left_Fuzzy_topic, String(speedL).c_str());
         client.publish(distance_topic, String(distance).c_str());
@@ -454,8 +486,8 @@ void loop() {
         Serial.print(speedR);
         Serial.println(" fuzzs");
     } else{
-      
-    stopMotors();  
+      // If no communication occurs, stop the motors
+      stopMotors();  
       
     }
   }
