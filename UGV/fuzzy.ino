@@ -1,8 +1,29 @@
-#include <BluetoothSerial.h>
+#include <BluetoothSerial.h>    // Library for Bluetooth communication
+#include <WiFiClientSecure.h>   // Library for secure Wi-Fi connection
+#include <esp_crt_bundle.h>     // ESP32 certificate bundle
+#include <WiFi.h>               // Library for Wi-Fi functions
+#include <PubSubClient.h>  
+
 BluetoothSerial SerialBT;
 
+
+// MQTT Data
+const char* ssid = "m";
+const char* password = "11111111";
+const char* mqtt_broker = "bae6e1004af84917878e457c24d59cce.s1.eu.hivemq.cloud";
+const char* mqtt_username = "esp32";   
+const char* mqtt_password = "esppass"; 
+const int mqttPort = 8883;
+const char* right_Fuzzy_topic = "UGV/RF";
+const char* left_Fuzzy_topic = "UGV/LF";
+const char* distance_topic = "UGV/Distance";
+const char* orientation_topic = "UGV/Orient";
+// WiFi Data
+WiFiClientSecure espClient;
+PubSubClient client(espClient);
+
 // Motor A
-int ena_pin = 15;   // Update these pins to valid GPIOs
+int ena_pin = 15;  
 int in1_pin = 2;
 int in2_pin = 0;
 // Motor B
@@ -11,7 +32,7 @@ int in4_pin = 16;
 int enb_pin = 17;
 
 // IR front and back word
-int IR_F = 36;  // ADD BINS
+int IR_F = 36;  
 int IR_B = 39;
 
 // Flag to interrupt motor control
@@ -23,14 +44,11 @@ float speed_right = 0;
 float direction = 0;
 
 // Define the pin for the IR sensor for each wheel
-const int leftIRSensorPin = 2;   // IR sensor pin for the left wheel
-const int rightIRSensorPin = 3;  // IR sensor pin for the right wheel
+const int FrontleftIRSensorPin = 35;
+const int FrontRightIRSensorPin = 34;
+const int BackleftIRSensorPin = 32;
+const int BackRightIRSensorPin = 33; 
 
-/* const int FrontleftIRSensorPin = 35;
- * const int FrontRightIRSensorPin = 34;
- * const int BackleftIRSensorPin = 32;
- * const int BackRightIRSensorPin = 33; * 
- */
 
 // Define constants for the wheel and tick counting
 const float wheelRadius = 6.5;     // Radius of the wheel in meters (e.g., 10 cm)
@@ -150,7 +168,7 @@ float triangular_MF(float x, float a, float b, float c) {
     return (x < b) ? (x - a) / (b - a) : (c - x) / (c - b);
 }
 
-// Triangular membership function
+// Trapizoidal membership function
 float trapizoidal_MF(float x, float a, float b, float c, float d) {
     if (x <= a || x >= d) {
         return 0.0;  // Outside the trapezoid
@@ -193,24 +211,24 @@ void moveForward(int intensity_A, int intensity_B) {
   // Motor A forward
   digitalWrite(in1_pin, LOW);
   digitalWrite(in2_pin, HIGH);
-  analogWrite(ena_pin, intensity_A);  // Full speed
+  analogWrite(ena_pin, intensity_A);  
 
   // Motor B forward
   digitalWrite(in3_pin, LOW);
   digitalWrite(in4_pin, HIGH);
-  analogWrite(enb_pin, intensity_B);  // Full speed
+  analogWrite(enb_pin, intensity_B);  
 }
 
 void moveBackward(int intensity_A, int intensity_B) {
   // Motor A backward
   digitalWrite(in1_pin, HIGH);
   digitalWrite(in2_pin, LOW);
-  analogWrite(ena_pin, intensity_A);  // Full speed
+  analogWrite(ena_pin, intensity_A);  
 
   // Motor B backward
   digitalWrite(in3_pin, HIGH);
   digitalWrite(in4_pin, LOW);
-  analogWrite(enb_pin, intensity_B);  // Full speed
+  analogWrite(enb_pin, intensity_B);  
 }
 
 void turnLeft(int intensity_A, int intensity_B) {
@@ -222,7 +240,7 @@ void turnLeft(int intensity_A, int intensity_B) {
   // Motor B forward
   digitalWrite(in3_pin, LOW);
   digitalWrite(in4_pin, HIGH);
-  analogWrite(enb_pin, intensity_B);  // Full speed
+  analogWrite(enb_pin, intensity_B);  
 }
 
 void turnRight(int intensity_A, int intensity_B) {
@@ -234,7 +252,7 @@ void turnRight(int intensity_A, int intensity_B) {
   // Motor A forward
   digitalWrite(in1_pin, LOW);
   digitalWrite(in2_pin, HIGH);
-  analogWrite(ena_pin, intensity_A);  // Full speed
+  analogWrite(ena_pin, intensity_A);  
 }
 
 void stopMotors() {
@@ -256,7 +274,31 @@ void onSensorChange() {
 }
 
 void setup() {
+
+  delay(10);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  espClient.setInsecure();
+  Serial.println("Connected.");
+  client.setServer(mqtt_broker, mqttPort);
+  
+  while (!client.connected()) {
+      Serial.print("Connecting to MQTT Broker...");
+      String client_id = "esp32-client-" + String(WiFi.macAddress());
+      if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
+          Serial.println("Connected to MQTT Broker");
+      } else {
+          Serial.print("Failed with state ");
+          Serial.print(client.state());
+          delay(2000);
+      }
+  }
+
   Serial.begin(115200);
+  // Start serial communication with ESPCam over RX2 and TX2
   Serial1.begin(115200, SERIAL_8N1,14,12);
 
   if (!SerialBT.begin("esp32")) {  // Check if Bluetooth starts properly
@@ -270,8 +312,10 @@ void setup() {
   pinMode(rightIRSensorPin, INPUT);
 
   // Attach interrupts to the IR sensor pins
-  attachInterrupt(digitalPinToInterrupt(leftIRSensorPin), leftWheelTick, RISING);    // Detect rising edge for the left wheel
-  attachInterrupt(digitalPinToInterrupt(rightIRSensorPin), rightWheelTick, RISING);  // Detect rising edge for the right wheel
+  attachInterrupt(digitalPinToInterrupt(FrontleftIRSensorPin), leftWheelTick, RISING);    // Detect rising edge for the left wheel
+  attachInterrupt(digitalPinToInterrupt(FrontRightIRSensorPin), rightWheelTick, RISING);  // Detect rising edge for the right wheel
+  attachInterrupt(digitalPinToInterrupt(BackleftIRSensorPin), leftWheelTick, RISING);    // Detect rising edge for the left wheel
+  attachInterrupt(digitalPinToInterrupt(BackRightIRSensorPin), rightWheelTick, RISING);  // Detect rising edge for the right wheel
 
   // Initialize pins for motors
   pinMode(in1_pin, OUTPUT);
@@ -305,7 +349,6 @@ void loop() {
     Serial.println("a device is paired");
 
     // if there is a paired device, move using manual instructions
-
     if (Serial.available()) {
       SerialBT.write(Serial.read());
     }
@@ -343,27 +386,23 @@ void loop() {
       }
     }
   } else{
+    // Reads data from ESPCam attached over serial on RX2 and TX2
     if (Serial1.available() > 0 ) {
-      String distanceData = "";
+        String distanceData = "";
         String orientationData = "";
         bool readD = false;
-         // A string to hold incoming data
         while (Serial1.available() > 0) {
             char incomingByte = Serial1.read();
             if  (incomingByte == '|') readD = true;
             else if (readD){
-              distanceData += incomingByte;
+              distanceData += incomingByte;        // Append the byte to the string
             }
             else{
-            orientationData += incomingByte;       // Append the byte to the string
-            }
-
-   
-            
+              orientationData += incomingByte;       // Append the byte to the string
+            }            
         }
         Serial.println(orientationData);
         Serial.println(distanceData);
-        // Example: If you expect orientation and distance values
         float orientation = orientationData.toFloat();
         float distance = distanceData.toFloat();
 
@@ -397,6 +436,11 @@ void loop() {
             
             Serial.print("F");
         }
+
+        client.publish(right_Fuzzy_topic, String(speedR).c_str());
+        client.publish(left_Fuzzy_topic, String(speedL).c_str());
+        client.publish(distance_topic, String(distance).c_str());
+        client.publish(orientation_topic, String(orientation).c_str());
 
         // Calculate and print the distances traveled by each wheel
         float leftWheelDistance = getDistance(leftWheelTicks, wheelRadius, ticksPerRevolution);
