@@ -87,8 +87,8 @@ def index():
         else:
             return 'Invalid file type!'  # Return error message for invalid file types
 
-@app.route('/image', methods=['GET'])
-def get_image():
+@app.route('/image/<time>', methods=['GET'])
+def get_image(time):
     global received_image  # Access the global variable received_image
     if received_image is not None:
         img_io = BytesIO()
