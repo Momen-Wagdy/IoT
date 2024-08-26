@@ -2,17 +2,17 @@
 BluetoothSerial SerialBT;
 
 // Motor A
-int in1_pin = 2;  // Update these pins to valid GPIOs
+int ena_pin = 15;   // Update these pins to valid GPIOs
+int in1_pin = 2;
 int in2_pin = 0;
-int en1_pin = 15;
 // Motor B
 int in3_pin = 4;
 int in4_pin = 16;
-int en2_pin = 17;
+int enb_pin = 17;
 
 // IR front and back word
-int IR_F = 5;  // ADD BINS
-int IR_B = 18;
+int IR_F = 36;  // ADD BINS
+int IR_B = 39;
 
 // Flag to interrupt motor control
 volatile bool interruptFlag = false;
@@ -25,6 +25,12 @@ float direction = 0;
 // Define the pin for the IR sensor for each wheel
 const int leftIRSensorPin = 2;   // IR sensor pin for the left wheel
 const int rightIRSensorPin = 3;  // IR sensor pin for the right wheel
+
+/* const int FrontleftIRSensorPin = 35;
+ * const int FrontRightIRSensorPin = 34;
+ * const int BackleftIRSensorPin = 32;
+ * const int BackRightIRSensorPin = 33; * 
+ */
 
 // Define constants for the wheel and tick counting
 const float wheelRadius = 6.5;     // Radius of the wheel in meters (e.g., 10 cm)
@@ -187,56 +193,56 @@ void moveForward(int intensity_A, int intensity_B) {
   // Motor A forward
   digitalWrite(in1_pin, LOW);
   digitalWrite(in2_pin, HIGH);
-  analogWrite(en1_pin, intensity_A);  // Full speed
+  analogWrite(ena_pin, intensity_A);  // Full speed
 
   // Motor B forward
   digitalWrite(in3_pin, LOW);
   digitalWrite(in4_pin, HIGH);
-  analogWrite(en2_pin, intensity_B);  // Full speed
+  analogWrite(enb_pin, intensity_B);  // Full speed
 }
 
 void moveBackward(int intensity_A, int intensity_B) {
   // Motor A backward
   digitalWrite(in1_pin, HIGH);
   digitalWrite(in2_pin, LOW);
-  analogWrite(en1_pin, intensity_A);  // Full speed
+  analogWrite(ena_pin, intensity_A);  // Full speed
 
   // Motor B backward
   digitalWrite(in3_pin, HIGH);
   digitalWrite(in4_pin, LOW);
-  analogWrite(en2_pin, intensity_B);  // Full speed
+  analogWrite(enb_pin, intensity_B);  // Full speed
 }
 
 void turnLeft(int intensity_A, int intensity_B) {
   // Motor A stop
-  analogWrite(en1_pin, intensity_A);
+  analogWrite(ena_pin, intensity_A);
   digitalWrite(in1_pin, HIGH);
   digitalWrite(in2_pin, LOW);
 
   // Motor B forward
   digitalWrite(in3_pin, LOW);
   digitalWrite(in4_pin, HIGH);
-  analogWrite(en2_pin, intensity_B);  // Full speed
+  analogWrite(enb_pin, intensity_B);  // Full speed
 }
 
 void turnRight(int intensity_A, int intensity_B) {
   // Motor B stop
-  analogWrite(en2_pin, intensity_B);
+  analogWrite(enb_pin, intensity_B);
   digitalWrite(in3_pin, HIGH);
   digitalWrite(in4_pin, LOW);
 
   // Motor A forward
   digitalWrite(in1_pin, LOW);
   digitalWrite(in2_pin, HIGH);
-  analogWrite(en1_pin, intensity_A);  // Full speed
+  analogWrite(ena_pin, intensity_A);  // Full speed
 }
 
 void stopMotors() {
   // Motor A stop
-  analogWrite(en1_pin, 0);
+  analogWrite(ena_pin, 0);
 
   // Motor B stop
-  analogWrite(en2_pin, 0);
+  analogWrite(enb_pin, 0);
 }
 
 // Function that runs automatically when detecting any IR sensor going low
@@ -270,18 +276,18 @@ void setup() {
   // Initialize pins for motors
   pinMode(in1_pin, OUTPUT);
   pinMode(in2_pin, OUTPUT);
-  pinMode(en1_pin, OUTPUT);
+  pinMode(ena_pin, OUTPUT);
 
   pinMode(in3_pin, OUTPUT);
   pinMode(in4_pin, OUTPUT);
-  pinMode(en2_pin, OUTPUT);
+  pinMode(enb_pin, OUTPUT);
 
   digitalWrite(in1_pin, LOW);
   digitalWrite(in2_pin, LOW);
-  digitalWrite(en1_pin, LOW);
+  digitalWrite(ena_pin, LOW);
   digitalWrite(in3_pin, LOW);
   digitalWrite(in4_pin, LOW);
-  digitalWrite(en2_pin, LOW);
+  digitalWrite(enb_pin, LOW);
 
   Serial.println("Setup complete.");
 
