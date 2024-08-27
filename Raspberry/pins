@@ -1,0 +1,26 @@
+Servo driver:
+	SDA
+	SCL
+
+Servos are on ch1-5 
+
+
+Water pump: GPIO4
+
+Fan: GPIO17
+
+Power: GPIO27
+
+PIR: GPIO22
+
+MQ-2: GPIO18
+
+MQ-9: GPIO23
+
+Flame: GPIO24
+
+DHT11: GPIO25
+
+Current: GPIO12
+
+Voltage: GPIO16
