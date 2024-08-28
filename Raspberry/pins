@@ -13,6 +13,24 @@ Power: GPIO27
 
 PIR: GPIO22
 
+
+ADC RPI pins:
+	A: GPIO13
+	
+	B: GPIO19
+	
+	C: GPIO26
+	
+	Start: GPIO6
+	
+	OE: GPIO5
+	
+	EOC: GPIO21
+	
+	CLOCK: GPIO
+
+
+
 MQ-2: GPIO18
 
 MQ-9: GPIO23
