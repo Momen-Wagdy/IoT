@@ -1,4 +1,4 @@
-Servo driver:
+Servo driver/LCD/OLED:
 	SDA
 	SCL
 
@@ -45,6 +45,10 @@ Current: GPIO12
 
 Voltage: GPIO16
 
+Utrasonic Servo: ch5
+
+Trig: 9
+Echo: 11
 
 
 
