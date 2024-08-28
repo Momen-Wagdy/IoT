@@ -2,7 +2,7 @@ Servo driver:
 	SDA
 	SCL
 
-Servos are on ch1-5 
+Servos are on ch0:4 
 
 
 Water pump: GPIO4
