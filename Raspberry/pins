@@ -29,7 +29,7 @@ ADC RPI pins:
 	
 	EOC: GPIO21
 	
-	CLOCK: GPIO
+	CLOCK: GPIO20
 
 
 
