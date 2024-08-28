@@ -11,6 +11,8 @@ Fan: GPIO17
 
 Power: GPIO27
 
+ETC: 
+
 PIR: GPIO22
 
 
@@ -42,3 +44,16 @@ DHT11: GPIO25
 Current: GPIO12
 
 Voltage: GPIO16
+
+
+
+
+Keypad (esp):
+	R1: GPIO34
+	R2: GPIO35
+	R3: GPIO32
+	R4: GPIO33
+	C1: GPIO25
+	C2: GPIO26
+	C3: GPIO27
+	C4: GPIO14
