@@ -1,3 +1,4 @@
+
 #include <BluetoothSerial.h>   // Library for Bluetooth communication
 #include <WiFiClientSecure.h>  // Library for secure Wi-Fi connection
 #include <esp_crt_bundle.h>    // ESP32 certificate bundle
@@ -59,7 +60,7 @@ const float wheelBase = 12;
 // Variables for precise location control
 float x = 0;
 float y = 0;
-float theta = 0;
+float theta = M_PI_2;
 bool preciseControl = false;
 
 
@@ -80,7 +81,7 @@ void rightWheelTick() {
 // Function to calculate distance traveled
 float getDistance(long ticks, float wheelRadius, int ticksPerRevolution) {
   // Calculate the circumference of the wheel
-  float wheelCircumference = 2 * PI * wheelRadius;
+  float wheelCircumference = 2 * M_PI * wheelRadius;
 
   // Calculate distance traveled
   float distance = (float(ticks) / ticksPerRevolution) * wheelCircumference;
@@ -303,7 +304,7 @@ void goToXY(float xn, float yn) {
   float eucledianDistance = sqrt(pow(xn - x, 2) + pow(yn - y, 2));
 
   // Angle between designated coordinates vector and x-axis
-  float newTheta = arctan2(yn, xn);
+  float newTheta = atan2(yn, xn);
   // Required change from robots angle to designated angle
   float changeInTheta = newTheta - theta;
 
@@ -319,10 +320,9 @@ void goToXY(float xn, float yn) {
   // If both arcs are approximately the same, move the robot forward
   if (abs(totalLeftMovement - totalRightMovement) < 10) {
 
-    moveForward(150,150);
+    moveForward(150, 150);
 
   } else {
-
     // If the right arc is significant
     if (abs(totalRightMovement) > 1) {
       // If it is a positive arc
@@ -331,11 +331,10 @@ void goToXY(float xn, float yn) {
         for (int i = 0; i < 100000; i++) {
           turnRight(150, 0);
         }
-        else {
-          // Turn the right wheels backward
-          for (int i = 0; i < 100000; i++) {
-            turnLeft(150, 0);
-          }
+      } else {
+        // Turn the right wheels backward
+        for (int i = 0; i < 100000; i++) {
+          turnLeft(150, 0);
         }
       }
     }
@@ -348,16 +347,16 @@ void goToXY(float xn, float yn) {
         for (int i = 0; i < 100000; i++) {
           turnLeft(0, 150);
         }
-        else {
-          // Turn the left wheel backward
-          for (int i = 0; i < 100000; i++) {
-            turnRight(0, 150);
-          }
+      } else {
+        // Turn the left wheel backward
+        for (int i = 0; i < 100000; i++) {
+          turnRight(0, 150);
         }
       }
     }
   }
 }
+
 
 void setup() {
 
