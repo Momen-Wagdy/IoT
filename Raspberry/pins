@@ -11,7 +11,7 @@ Fan: GPIO17
 
 Power: GPIO27
 
-ETC: 
+ETC: GPIO10
 
 PIR: GPIO22
 
@@ -63,7 +63,7 @@ ESP:
 		C3: GPIO27
 		C4: GPIO14
 
-	Buzzer: GPIO14
+	Buzzer: GPIO15
 
 	Speaker:
 		Left: GPIO4
