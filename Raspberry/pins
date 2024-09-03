@@ -13,8 +13,6 @@ Power: GPIO27
 
 ETC: GPIO10
 
-PIR: GPIO22
-
 
 ADC RPI pins:
 	A: GPIO13
@@ -30,6 +28,8 @@ ADC RPI pins:
 	EOC: GPIO21
 	
 	CLOCK: GPIO20
+
+	ALE: GPIO22
 	
 	D0: GPIO8
 	D1: GPIO18
@@ -70,3 +70,4 @@ ESP:
 	Speaker:
 		Left: GPIO4
 		Right: GPIO2
+	PIR: GPIO12
