@@ -533,16 +533,16 @@ void loop() {
         // Control the robot based on orientation and fuzzy values
         // The center of the image is at 320,320
         if (orientation < 230) {
-          for (int i = 0; i < 150000; i++) {
-            turnLeft(speedL, speedR);
+          for (int i = 0; i < 100000; i++) {
+            turnLeft(max(111,speedL), max(speedR,111));
           }
         } else if (distance > 410) {
-          for (int i = 0; i < 150000; i++) {
-            turnRight(speedL, speedR);
+          for (int i = 0; i < 100000; i++) {
+            turnRight(max(speedL,111), max(111,speedR));
           }
         } else {
-          for (int i = 0; i < 150000; i++) {
-            moveForward(speedL, speedR);
+          for (int i = 0; i < 100000; i++) {
+            moveForward(max(speedL,111), max(111,speedR));
           }
         }
         // Publish fuzzy data to MQTT
@@ -550,7 +550,7 @@ void loop() {
         client.publish(left_Fuzzy_topic, String(speedL).c_str());
         client.publish(distance_topic, String(distance).c_str());
         client.publish(orientation_topic, String(orientation).c_str());
-
+        
         Serial.print("Left Intensity: ");
         Serial.print(speedL);
         Serial.println(" fuzzs");
@@ -564,6 +564,15 @@ void loop() {
       stopMotors();
     }
   }
+  client.publish("IR_B", String(analogRead(IR_B)).c_str());
+  client.publish("IR_F", String(analogRead(IR_F)).c_str());
+  client.publish("FrontleftIRSensorPin",String(analogRead(FrontleftIRSensorPin)).c_str());
+  client.publish("FrontRightIRSensorPin",String(analogRead(FrontRightIRSensorPin)).c_str());
+  client.publish("BackleftIRSensorPin",String(analogRead(BackleftIRSensorPin)).c_str());
+  client.publish("BackRightIRSensorPin",String(analogRead(BackRightIRSensorPin)).c_str());
+  client.publish("x",String(x).c_str());
+  client.publish("y",String(y).c_str());
+  client.publish("theta",String(theta).c_str());
 
   // Calculate the distances traveled by each wheel pair
   float leftWheelDistance = getDistance(leftWheelTicks / 2, wheelRadius, ticksPerRevolution);
@@ -572,14 +581,14 @@ void loop() {
   // Total distance covered by both wheels
   float linearDistance = (leftWheelDistance + rightWheelDistance) / 2;
   // Angle between 2 circular arcs formed by both wheels
-  float angularDistance = (leftWheelDistance - rightWheelDistance) / wheelBase;
+  float angularDistance = (rightWheelDistance-leftWheelDistance) / wheelBase;
 
   // Updating the x value
   x += linearDistance * cos(angularDistance);
   // Updating the y value
   y += linearDistance * sin(angularDistance);
   // Updating the theta value
-  theta -= angularDistance;
+  theta += angularDistance;
 
   // Resetting the ticks for another calculation
   leftWheelTicks = 0;
