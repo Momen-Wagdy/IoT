@@ -11,9 +11,7 @@ Fan: GPIO17
 
 Power: GPIO27
 
-ETC: 
-
-PIR: GPIO22
+ETC: GPIO10
 
 
 ADC RPI pins:
@@ -31,19 +29,23 @@ ADC RPI pins:
 	
 	CLOCK: GPIO20
 
+	ALE: GPIO22
+	
+	D0: GPIO8
+	D1: GPIO18
+	D2: GPIO23
+	D3: GPIO24
+	D4: GPIO25
+	D5: GPIO16
+	D6: GPIO12
+	D7: GPIO7
 
-
-MQ-2: GPIO18
-
-MQ-9: GPIO23
-
-Flame: GPIO24
-
-DHT11: GPIO25
-
-Current: GPIO12
-
-Voltage: GPIO16
+	MQ-2: IN1
+	MQ-9: IN2
+	Flame: IN3
+	DHT11: IN4
+	Current: IN5
+	Voltage: IN6
 
 Utrasonic Servo: ch5
 
@@ -63,8 +65,9 @@ ESP:
 		C3: GPIO27
 		C4: GPIO14
 
-	Buzzer: GPIO14
+	Buzzer: GPIO15
 
 	Speaker:
 		Left: GPIO4
 		Right: GPIO2
+	PIR: GPIO12
