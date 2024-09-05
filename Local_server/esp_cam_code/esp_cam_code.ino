@@ -11,7 +11,7 @@ const char* password = "11111111";
 // Server data
 String serverName = "192.168.67.72";   
 String serverPath = "/";    
-const int serverPort = 19999;
+const int serverPort = 19999;             
 
 // WiFi client used for connection
 WiFiClient client;

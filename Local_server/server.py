@@ -3,13 +3,9 @@ import os
 from io import BytesIO
 from PIL import Image
 import numpy as np
-import torch  
 
 app = Flask(__name__)
-
-# Load YOLO model from a local directory
-model = torch.hub.load('./yolov5', 'custom', path='./yolo_model.pt', source='local')
-
+i = 72
 # Directory to store uploaded images
 UPLOAD_FOLDER = r"./espimages"
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}  # Allowed image file types
@@ -26,15 +22,6 @@ received_image = None
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Function to preprocess the image before passing it to the model
-def preprocess_image(image_bytes):
-    image = Image.open(BytesIO(image_bytes)).convert('RGB')  # Convert image to RGB
-    image = image.resize((640, 640))  # Resize image to 640x640
-    image = np.array(image) / 255.0  # Normalize pixel values to [0, 1]
-    image = np.transpose(image, (2, 0, 1))  # Reorder dimensions for PyTorch (channels, height, width)
-    image = torch.tensor(image, dtype=torch.float32)  # Convert to PyTorch tensor
-    image = image.unsqueeze(0)  # Add batch dimension
-    return image
 
 @app.route('/', methods=["POST", "GET"])
 def index():
@@ -54,38 +41,11 @@ def index():
 
         if file and allowed_file(file.filename):
             image_bytes = file.read()  # Read the image bytes
-            
+            global i
             received_image = Image.open(BytesIO(image_bytes)).convert('RGB')  # Store the image globally
-            
-            image = preprocess_image(image_bytes)  # Preprocess the image for model input
-            
-            with torch.no_grad():
-                outputs = model(image)  # Run inference with the YOLO model
-
-                detections = outputs.pandas().xyxy[0]  # Extract detection results in 'xyxy' format
-                
-                try:
-                    # Attempt to get the first detected object's bounding box
-                    row = detections.iterrows()[0][1]
-
-                    real_width = 5  # Real width of the detected object 
-
-                    x_min = row['xmin']
-                    x_max = row['xmax']
-                    mid_point = int((x_min + x_max) / 2)  # Calculate the mid-point of the object
-                    observed_width = x_max - x_min  # Calculate the observed width of the object
-
-                    focal_length = 308  # Focal length calculated manually
-
-                    # Calculate the distance to the object based on its observed width
-                    distance_to_object = int(focal_length * real_width / observed_width)
-
-                    return f"{mid_point}|{distance_to_object}\n"
-
-                except:
-                    return "0|0\n"  # Return default values if no object is detected
-        else:
-            return 'Invalid file type!'  # Return error message for invalid file types
+            received_image.save(os.path.join(UPLOAD_FOLDER,f'{i}.jpg'))
+            i+=1
+        return 'Invalid file type!'  # Return error message for invalid file types
 
 @app.route('/image/<time>', methods=['GET'])
 def get_image(time):
