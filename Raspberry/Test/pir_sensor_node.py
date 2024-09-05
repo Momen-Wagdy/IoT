@@ -5,13 +5,14 @@ from std_msgs.msg import Bool
 import RPi.GPIO as GPIO
 
 # Set up GPIO pin for the PIR sensor
-PIR_PIN = 17
+PIR_PIN = 22
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PIR_PIN, GPIO.IN)
 
 def pir_sensor_callback(channel):
     # Read the sensor value
     motion_detected = GPIO.input(PIR_PIN)
+    print("Motion detected: ", motion_detected)
     # Publish the motion detected status
     pub.publish(motion_detected)
 

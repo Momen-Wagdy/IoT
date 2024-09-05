@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import rospy
 from std_msgs.msg import String
@@ -10,7 +10,7 @@ def relay_control():
     GPIO.setmode(GPIO.BCM)
 
     # Define the GPIO pins for the relay channels
-    relay_pins = [17, 18, 27, 22]  # Change these to the GPIO pins you connected
+    relay_pins = [4, 17, 27, 10]  # Change these to the GPIO pins you connected
 
     # Set up each relay pin as an output
     for pin in relay_pins:
