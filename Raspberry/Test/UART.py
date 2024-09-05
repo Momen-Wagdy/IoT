@@ -9,18 +9,16 @@ class ESP32Node:
         self.baud_rate = rospy.get_param('~baud_rate', 115200)
         self.ser = serial.Serial(self.serial_port, self.baud_rate, timeout=1)
 
-        self.buzzer_sub = rospy.Subscriber('buzzer_control', String, self.buzzer_control)
+        self.buzzer_sub = rospy.Subscriber('buzzer_sequence', String, self.buzzer_control)
         self.speaker_sub = rospy.Subscriber('speaker_message', String, self.speaker_message)
 
         self.access_granted = False
         self.password = '11111111'
 
     def buzzer_control(self, msg):
-        state = msg.data
-        if (state == 'ON'):
-            self.ser.write(b'B\n')
-        elif (state == 'OFF'):
-            self.ser.write(b'b\n')
+        sequence = msg.data
+        for char in sequence:
+            self.ser.write(f'{char}\n')
 
     def speaker_message(self, msg):
         message = msg.data
@@ -44,3 +42,6 @@ if __name__ == '__main__':
         node.run()
     except rospy.ROSInterruptException:
         pass
+
+
+
