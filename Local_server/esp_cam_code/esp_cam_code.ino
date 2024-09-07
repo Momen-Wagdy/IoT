@@ -9,7 +9,7 @@ const char* ssid = "m";
 const char* password = "11111111";
 
 // Server data
-String serverName = "192.168.67.72";   
+String serverName = "192.168.67.244";   
 String serverPath = "/";    
 const int serverPort = 19999;             
 
@@ -35,7 +35,7 @@ WiFiClient client;
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
 
-const int timerInterval = 300;    // time between each HTTP POST image
+const int timerInterval = 100;    // time between each HTTP POST image
 unsigned long previousMillis = 0;   // last time image was sent
 
 void setup() {
@@ -103,80 +103,72 @@ void loop() {
   }
 }
 String sendPhoto() {
-  String response;  // String to store the response body
-  String statusLine;  // String to store the HTTP status line
-  String headers;  // String to store the HTTP headers
-  String body;  // String to store the response body
-  
-  camera_fb_t * fb = NULL;  // Pointer to a frame buffer structure for camera capture
-  fb = esp_camera_fb_get();  // Capture a photo using the camera
-  if(!fb) {  // Check if the capture failed
-    Serial.println("Camera capture failed");  // Print an error message if capture failed
-    delay(1000);  // Wait for 1 second
-    ESP.restart();  // Restart the ESP32 if capture failed
-  }
-  
-  // Attempt to connect to the server
-  if (client.connect(serverName.c_str(), serverPort)) {
-    // Prepare the multipart form-data HTTP request
-    String head = "--RandomNerdTutorials\r\nContent-Disposition: form-data; name=\"imageFile\"; filename=\"esp32-cam.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
-    String tail = "\r\n--RandomNerdTutorials--\r\n";
+  String response;    // String to store the final xx|yy response
 
-    uint32_t imageLen = fb->len;  // Get the length of the captured image
+  camera_fb_t* fb = NULL;                     // Pointer to a frame buffer structure for camera capture
+  fb = esp_camera_fb_get();                   // Capture a photo using the camera
+  if (!fb) {                                  // Check if the capture failed
+    Serial.println("Camera capture failed");  // Print an error message if capture failed
+    delay(1000);                              // Wait for 1 second
+    ESP.restart();                            // Restart the ESP32 if capture failed
+  }
+
+  // Attempt to connect to the server
+  else if (client.connect(serverName.c_str(), serverPort)) {
+    // Prepare the multipart form-data HTTP request
+   String head = "--ESPCAM\r\nContent-Disposition: form-data; name=\"imageFile\"; filename=\"esp32-cam.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
+    String tail = "\r\n--ESPCAM--\r\n";
+
+
+    uint32_t imageLen = fb->len;                        // Get the length of the captured image
     uint32_t extraLen = head.length() + tail.length();  // Calculate the length of the HTTP headers and footers
-    uint32_t totalLen = imageLen + extraLen;  // Calculate the total length of the HTTP request body
-  
+    uint32_t totalLen = imageLen + extraLen;            // Calculate the total length of the HTTP request body
+
     // Send the HTTP POST request
-    client.println("POST " + serverPath + " HTTP/1.1");  // Send the HTTP POST request line
-    client.println("Host: " + serverName);  // Send the Host header
-    client.println("Content-Length: " + String(totalLen));  // Send the Content-Length header
-    client.println("Content-Type: multipart/form-data; boundary=RandomNerdTutorials");  // Send the Content-Type header
-    client.println();  // Send a blank line to indicate the end of headers
-    client.print(head);  // Send the form-data headers
-  
-    uint8_t *fbBuf = fb->buf;  // Get a pointer to the image buffer
-    size_t fbLen = fb->len;  // Get the length of the image buffer
+    client.println("POST " + serverPath + " HTTP/1.1");                                 // Send the HTTP POST request line
+    client.println("Host: " + serverName);                                              // Send the Host header
+    client.println("Content-Length: " + String(totalLen));                              // Send the Content-Length header
+    client.println("Content-Type: multipart/form-data; boundary=ESPCAM");
+    client.println();                                                                   // Send a blank line to indicate the end of headers
+    client.print(head);                                                                 // Send the form-data headers
+
+    uint8_t* fbBuf = fb->buf;  // Get a pointer to the image buffer
+    size_t fbLen = fb->len;    // Get the length of the image buffer
     // Send the image data in chunks
     for (size_t n = 0; n < fbLen; n = n + 1024) {
-      if (n + 1024 < fbLen) {  // Check if a full 1024-byte chunk can be sent
-        client.write(fbBuf, 1024);  // Send a 1024-byte chunk of the image data
-        fbBuf += 1024;  // Move the buffer pointer forward by 1024 bytes
-      } else if (fbLen % 1024 > 0) {  // Check if there's a remaining partial chunk
+      if (n + 1024 < fbLen) {             // Check if a full 1024-byte chunk can be sent
+        client.write(fbBuf, 1024);        // Send a 1024-byte chunk of the image data
+        fbBuf += 1024;                    // Move the buffer pointer forward by 1024 bytes
+      } else if (fbLen % 1024 > 0) {      // Check if there's a remaining partial chunk
         size_t remainder = fbLen % 1024;  // Calculate the size of the remaining partial chunk
-        client.write(fbBuf, remainder);  // Send the remaining partial chunk
-      }
-    }   
-    client.print(tail);  // Send the form-data footer
-    
-    esp_camera_fb_return(fb);  // Return the frame buffer to free up memory
-    
-    int timeoutTimer = 300;  // Set a timeout period of 300 milliseconds
-    long startTimer = millis();  // Record the current time
-    boolean state = false;  // Flag to track when headers have been fully received
-    
-    // Read the server's response
-    while ((startTimer + timeoutTimer) > millis()) {
-      if (client.available()) {  // Check if data is available to read from the server
-        String line = client.readStringUntil('\n');  // Read a line of data from the server
-        if (statusLine.length() == 0) {  // Check if the status line has been received yet
-          statusLine = line;  // Store the first line as the status line
-        } else if (line.length() <= 2) {  // Check if the line is empty, indicating the end of headers
-          state = true;  // Set the flag to true, indicating headers are done
-        } else if (state) {  // If headers are done, start reading the body
-          body += line + "\n";  // Append the line to the response body
-        } else {  // If still reading headers
-          headers += line + "\n";  // Append the line to the headers
-        }
-        startTimer = millis();  // Reset the timer after each line read
+        client.write(fbBuf, remainder);   // Send the remaining partial chunk
       }
     }
-    
-    client.stop();  // Close the connection to the server
-    Serial.write(body.c_str());  // Print the response body to the Serial monitor
+    client.print(tail);  // Send the form-data footer
 
-    return body;  // Return the response body
-  } else {  // If connection to the server failed
-    Serial.write("505");  // Print an error code to the Serial monitor
-    return response;  // Return an empty response
+    esp_camera_fb_return(fb);  // Return the frame buffer to free up memory
+
+    int timeoutTimer = 1000;      // Set a timeout period of 1000 milliseconds
+    long startTimer = millis();   // Record the current time
+    boolean state = false;        // Flag to track when headers have been fully received
+
+    while ((startTimer + timeoutTimer) > millis()) {
+      if (client.available()) {                      // Check if data is available to read from the server
+        String line = client.readStringUntil('\n');  // Read a line of data from the server
+
+        if (line.indexOf('|') > 0) {                 // Check if the line contains the delimiter '|'
+          response = line;                           // Store the response as it is in "xx|yy" format
+          break;                                     // Exit the loop once the desired format is found
+        }
+        startTimer = millis();                       // Reset the timer after each line read
+      }
+    }
+
+    client.stop();      // Close the connection to the server
+    Serial.write(response.c_str());  // Print the "xx|yy" response to the Serial monitor
+    return response;             // Return the "xx|yy" response
+  } else {                  // If connection to the server failed
+    Serial.write("0|0\n");  // Print an error code to the Serial monitor
+    return "0|0";           // Return "0|0" as the response
   }
 }
