@@ -536,7 +536,7 @@ void loop() {
           for (int i = 0; i < 100000; i++) {
             turnLeft(max(111,speedL), max(speedR,111));
           }
-        } else if (distance > 410) {
+        } else if (orientation > 410) {
           for (int i = 0; i < 100000; i++) {
             turnRight(max(speedL,111), max(111,speedR));
           }
