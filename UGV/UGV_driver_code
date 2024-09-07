@@ -1,28 +1,9 @@
 
 #include <BluetoothSerial.h>   // Library for Bluetooth communication
-#include <WiFiClientSecure.h>  // Library for secure Wi-Fi connection
-#include <esp_crt_bundle.h>    // ESP32 certificate bundle
-#include <WiFi.h>              // Library for Wi-Fi functions
-#include <PubSubClient.h>
 #include <math.h>
 
 BluetoothSerial SerialBT;
 
-
-// MQTT Data
-const char* ssid = "m";
-const char* password = "11111111";
-const char* mqtt_broker = "bae6e1004af84917878e457c24d59cce.s1.eu.hivemq.cloud";
-const char* mqtt_username = "esp32";
-const char* mqtt_password = "esppass";
-const int mqttPort = 8883;
-const char* right_Fuzzy_topic = "UGV/RF";
-const char* left_Fuzzy_topic = "UGV/LF";
-const char* distance_topic = "UGV/Distance";
-const char* orientation_topic = "UGV/Orient";
-// WiFi Data
-WiFiClientSecure espClient;
-PubSubClient client(espClient);
 
 // Motor A
 int ena_pin = 15;
@@ -359,38 +340,13 @@ void goToXY(float xn, float yn) {
 
 
 void setup() {
-
-  delay(10);
-
-  // Begin WiFi connection
-  WiFi.begin(ssid, password);
-  // Tries to connect to WiFi
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  // Sets ESP communication as insecure, MQTT does not work otherwise
-  espClient.setInsecure();
-  Serial.println("Connected.");
-  // Set data for MQTT client
-  client.setServer(mqtt_broker, mqttPort);
-
-  // Connects to MQTT client
-  while (!client.connected()) {
-    Serial.print("Connecting to MQTT Broker...");
-    // ID to connect to client with
-    String client_id = "esp32-client-" + String(WiFi.macAddress());
-    // Tries to connect using given username and password
-    if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-      Serial.println("Connected to MQTT Broker");
-    } else {
-      // If connection fails, log the error code
-      Serial.print("Failed with state ");
-      Serial.print(client.state());
-      delay(2000);
-    }
-  }
-
+  // Set all motor pins as low
+  digitalWrite(in1_pin, LOW);
+  digitalWrite(in2_pin, LOW);
+  digitalWrite(ena_pin, LOW);
+  digitalWrite(in3_pin, LOW);
+  digitalWrite(in4_pin, LOW);
+  digitalWrite(enb_pin, LOW);
   // Begins serial printing
   Serial.begin(115200);
   // Start serial communication with ESPCam over RX2 and TX2
@@ -423,14 +379,6 @@ void setup() {
   pinMode(in3_pin, OUTPUT);
   pinMode(in4_pin, OUTPUT);
   pinMode(enb_pin, OUTPUT);
-
-  // Set all motor pins as low
-  digitalWrite(in1_pin, LOW);
-  digitalWrite(in2_pin, LOW);
-  digitalWrite(ena_pin, LOW);
-  digitalWrite(in3_pin, LOW);
-  digitalWrite(in4_pin, LOW);
-  digitalWrite(enb_pin, LOW);
 
   Serial.println("Setup complete.");
 
@@ -518,39 +466,36 @@ void loop() {
         interruptFlag = false;
       }
 
-      // If the object is in the robots pickers range
-      if (distance < 10) {
-        // Use precise control to go to bin
-        preciseControl = true;
-      } else {
+//      // If the object is in the robots pickers range
+//      if (distance < 10) {
+//        // Use precise control to go to bin
+//       // preciseControl = true;
+//      } else {
         // Calculate the speeds using the inference system
         FIS(orientation, distance);
 
         // Convert defuzzified valeus to integer
         int speedR = (int)speed_right;
         int speedL = (int)speed_left;
-
+        if (speedL == 0 && speedR == 0) 
+        {
+         }
+        else
         // Control the robot based on orientation and fuzzy values
         // The center of the image is at 320,320
-        if (orientation < 230) {
-          for (int i = 0; i < 100000; i++) {
+        if (orientation < 300) {
+          for (int i = 0; i < 95000; i++) {
             turnLeft(max(111,speedL), max(speedR,111));
           }
-        } else if (orientation > 410) {
-          for (int i = 0; i < 100000; i++) {
+        } else if (orientation > 500) {
+          for (int i = 0; i < 95000; i++) {
             turnRight(max(speedL,111), max(111,speedR));
           }
         } else {
-          for (int i = 0; i < 100000; i++) {
+          for (int i = 0; i < 95000; i++) {
             moveForward(max(speedL,111), max(111,speedR));
           }
         }
-        // Publish fuzzy data to MQTT
-        client.publish(right_Fuzzy_topic, String(speedR).c_str());
-        client.publish(left_Fuzzy_topic, String(speedL).c_str());
-        client.publish(distance_topic, String(distance).c_str());
-        client.publish(orientation_topic, String(orientation).c_str());
-        
         Serial.print("Left Intensity: ");
         Serial.print(speedL);
         Serial.println(" fuzzs");
@@ -558,21 +503,13 @@ void loop() {
         Serial.print("Right Intesity: ");
         Serial.print(speedR);
         Serial.println(" fuzzs");
-      }
+//      }
     } else {
       // If no communication occurs, stop the motors
       stopMotors();
     }
   }
-  client.publish("IR_B", String(analogRead(IR_B)).c_str());
-  client.publish("IR_F", String(analogRead(IR_F)).c_str());
-  client.publish("FrontleftIRSensorPin",String(analogRead(FrontleftIRSensorPin)).c_str());
-  client.publish("FrontRightIRSensorPin",String(analogRead(FrontRightIRSensorPin)).c_str());
-  client.publish("BackleftIRSensorPin",String(analogRead(BackleftIRSensorPin)).c_str());
-  client.publish("BackRightIRSensorPin",String(analogRead(BackRightIRSensorPin)).c_str());
-  client.publish("x",String(x).c_str());
-  client.publish("y",String(y).c_str());
-  client.publish("theta",String(theta).c_str());
+
 
   // Calculate the distances traveled by each wheel pair
   float leftWheelDistance = getDistance(leftWheelTicks / 2, wheelRadius, ticksPerRevolution);
