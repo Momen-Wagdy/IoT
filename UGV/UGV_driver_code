@@ -483,16 +483,8 @@ void loop() {
         else
         // Control the robot based on orientation and fuzzy values
         // The center of the image is at 320,320
-        if (orientation < 300) {
-          for (int i = 0; i < 95000; i++) {
-            turnLeft(max(111,speedL), max(speedR,111));
-          }
-        } else if (orientation > 500) {
-          for (int i = 0; i < 95000; i++) {
-            turnRight(max(speedL,111), max(111,speedR));
-          }
-        } else {
-          for (int i = 0; i < 95000; i++) {
+        {
+          for (int i = 0; i < 90000; i++) {
             moveForward(max(speedL,111), max(111,speedR));
           }
         }
