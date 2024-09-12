@@ -43,7 +43,6 @@ ADC RPI pins:
 	MQ-2: IN1
 	MQ-9: IN2
 	Flame: IN3
-	DHT11: IN4
 	Current: IN5
 	Voltage: IN6
 
@@ -71,3 +70,4 @@ ESP:
 		Left: GPIO4
 		Right: GPIO2
 	PIR: GPIO12
+	DHT11: IN4
