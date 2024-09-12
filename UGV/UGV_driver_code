@@ -6,17 +6,17 @@ BluetoothSerial SerialBT;
 
 
 // Motor A
-int ena_pin = 15;
-int in1_pin = 2;
-int in2_pin = 0;
+int ena_pin = 13;
+int in1_pin = 12;
+int in2_pin = 14;
 // Motor B
-int in3_pin = 4;
-int in4_pin = 16;
-int enb_pin = 17;
+int in3_pin = 27;
+int in4_pin = 26;
+int enb_pin = 25;
 
 // IR front and back word
-int IR_F = 36;
-int IR_B = 39;
+int IR_F = 4;
+int IR_B = 2;
 
 // Flag to interrupt motor control
 volatile bool interruptFlag = false;
@@ -27,10 +27,10 @@ float speed_right = 0;
 float direction = 0;
 
 // Define the pin for the IR sensor for each wheel
-const int FrontleftIRSensorPin = 35;
-const int FrontRightIRSensorPin = 34;
-const int BackleftIRSensorPin = 32;
-const int BackRightIRSensorPin = 33;
+const int FrontleftIRSensorPin = 34;
+const int FrontRightIRSensorPin = 15;
+const int BackleftIRSensorPin = 35;
+const int BackRightIRSensorPin = 32;
 
 
 // Define constants for the wheel and tick counting
