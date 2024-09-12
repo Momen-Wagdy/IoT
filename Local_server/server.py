@@ -17,13 +17,14 @@ UPLOAD_FOLDER = "./espimages"
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}  # Allowed image file types
 PORT = 19999
 
+
 # Create the upload folder if it doesn't exist
 if not os.path.exists(UPLOAD_FOLDER): 
     os.makedirs(UPLOAD_FOLDER)
 
 # Global variable to store the most recently received image
 received_image = None
-
+speed_left, speed_right, brightness = None, None, None
 def calculate_brightness(image):
     # Convert image to grayscale
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -282,6 +283,7 @@ def index():
 
                     if distance_to_object < 10: return '-1|-1\n'
                     print(mid_point,distance_to_object)
+                    global speed_left,speed_right,brightness
                     speed_left,speed_right = fuzzy_inference_system(mid_point,distance_to_object)
                     brightness = abs(int(is_brightness_low(image)) - 1)
                     return f"{int(speed_left)}|{int(speed_right)}|{brightness}\n"
@@ -305,7 +307,8 @@ def get_image(time):
 
 @app.route('/suggest/')
 def getSuggesting():
-    return ''
+    return f"{int(speed_left)}|{int(speed_right)}|{brightness}\n"
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=PORT)  # Run the Flask app on the specified port
 
