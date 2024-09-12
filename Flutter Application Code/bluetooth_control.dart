@@ -1,5 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -15,7 +17,7 @@ class UGVBluetoothController extends StatefulWidget {
 class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
   Timer? timer;
   bool pressed = false;
-  BluetoothCharacteristic? movementCharacteristic;
+  BluetoothConnection? connection;
   BluetoothDevice? connectedDevice;
 
   @override
@@ -25,30 +27,49 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
   }
 
   void scanDevices() async {
-    FlutterBlue flutterBlue = FlutterBlue.instance;
-    flutterBlue.startScan();
-    flutterBlue.scanResults.listen((results) {
-      for (ScanResult r in results) {
-        if (r.device.name == 'esp32') {
-          connectDevice(r.device);
-          flutterBlue.stopScan();
-          break;
-        }
+    // Request paired devices, then select one to connect
+    List<BluetoothDevice> devices = await FlutterBluetoothSerial.instance.getBondedDevices();
+
+    for (BluetoothDevice device in devices) {
+      print("${device.address} ${device.name}");
+      if (device.address == 'EC:64:C9:87:36:86') { // Replace with your ESP32 MAC address
+        print("Connecting..");
+        connectDevice(device);
+        break;
       }
-    });
+    }
   }
 
   void connectDevice(BluetoothDevice device) async {
-    await device.connect();
-    setState(() {
-      connectedDevice = device;
-    });
+    try {
+      // Establish Bluetooth connection
+      await BluetoothConnection.toAddress(device.address).then((_connection) {
+        print('Connected to the device');
+        setState(() {
+          connectedDevice = device;
+          connection = _connection;
+        });
+
+        connection!.input!.listen(_onDataReceived).onDone(() {
+          print('Disconnected by remote request');
+        });
+      });
+    } catch (e) {
+      print('Could not connect to the device: $e');
+    }
   }
 
+  // Send data to the connected Bluetooth device
   void sendInstruction(String command) async {
-    if (movementCharacteristic != null) {
-      await movementCharacteristic!.write(command.codeUnits);
+    if (connection != null && connection!.isConnected) {
+      connection!.output.add(Uint8List.fromList(command.codeUnits));
+      await connection!.output.allSent;
     }
+  }
+
+  // Handle data received from the Bluetooth device
+  void _onDataReceived(Uint8List data) {
+    print('Data received: $data');
   }
 
   void _onLongPressEnd(LongPressEndDetails details) {
@@ -59,7 +80,7 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
 
   void startStream(String command) {
     timer?.cancel();
-    timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+    timer = Timer.periodic(const Duration(milliseconds: 1), (timer) {
       if (pressed) {
         sendInstruction(command);
       } else {
@@ -90,7 +111,7 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
                 color: Colors.blueAccent,
                 onPressed: () {
                   sendInstruction('F');
-                  sleep(const Duration(microseconds: 20));
+                  sleep(const Duration(microseconds: 10));
                   sendInstruction('S');
                 },
                 onLongPress: () {
@@ -126,7 +147,7 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
                     icon: Icons.arrow_left,
                   ),
                 ),
-                const SizedBox(width: 130),
+                const SizedBox(width: 120),
                 // Right Button
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -173,5 +194,12 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    connection?.dispose();
+    connection = null;
+    super.dispose();
   }
 }
