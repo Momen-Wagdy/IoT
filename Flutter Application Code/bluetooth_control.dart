@@ -1,12 +1,9 @@
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'dart:async';
 import 'dart:io';
-
 import 'package:ugv_control_app/custom_button.dart';
-
 import 'camera_view.dart';
 
 class UGVBluetoothController extends StatefulWidget {
@@ -18,6 +15,7 @@ class UGVBluetoothController extends StatefulWidget {
 
 class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
   Timer? timer;
+  double speed = 150;
   bool pressed = false;
   bool led = false;
   bool buzzer = false;
@@ -28,7 +26,7 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
   @override
   void initState() {
     super.initState();
-    scanDevices();
+    //scanDevices();
   }
 
   void scanDevices() async {
@@ -67,7 +65,9 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
   // Send data to the connected Bluetooth device
   void sendInstruction(String command) async {
     if (connection != null && connection!.isConnected) {
-      connection!.output.add(Uint8List.fromList(command.codeUnits));
+      String finalCommand = '$command$speed';
+      print(finalCommand);
+      connection!.output.add(Uint8List.fromList(finalCommand.codeUnits));
       await connection!.output.allSent;
     }
   }
@@ -118,7 +118,17 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            Slider(value: 150/255, onChanged: (a){}),
+            Slider(
+              value: speed, 
+              min: 0,
+              max: 255,
+              divisions: 255,
+              label: speed.round().toString(),
+              onChanged: (double value){
+                setState(() {
+                  speed = value;
+                });
+            }),
             // Forward Button (Up)
               Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -164,22 +174,17 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
                         icon: Icons.arrow_left,
                       ),
                     ),
-                                    const SizedBox(width: 15),
-                    Column(children:[
+                    SizedBox(width: 15,),
                     SizedBox(
                       width: 70,
-                      height: 40,
+                      height: 70,
                       child: ElevatedButton(
                         onPressed: () {
                           setState(() {
                             if (!led) {
                               sendInstruction('A');
-                              sendInstruction('A');
-                              sendInstruction('A');
                               led = true;
                             } else {
-                              sendInstruction('T');
-                              sendInstruction('T');
                               sendInstruction('T');
                               led = false;
                             }
@@ -195,32 +200,6 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
                         ),
                       ),
                     ),
-                    SizedBox(
-                      width: 70,
-                      
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            if (!buzzer) {
-                              sendInstruction('C');
-                              buzzer = true;
-                            } else {
-                              sendInstruction('D');
-                              buzzer = false;
-                            }
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: buzzer ? Colors.green : Colors.red,
-                          foregroundColor: Colors.blue,
-                        ),
-                        child: const Text(
-                          "Buzzer",
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ),]),
                     const SizedBox(width: 15),
                     // Right Button
                     Padding(
