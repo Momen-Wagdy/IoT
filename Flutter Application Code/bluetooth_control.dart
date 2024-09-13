@@ -7,19 +7,24 @@ import 'dart:io';
 
 import 'package:ugv_control_app/custom_button.dart';
 
-class UGVBluetoothController extends StatefulWidget {
-  const UGVBluetoothController({super.key});
+import 'camera_view.dart';
 
+class UGVBluetoothController extends StatefulWidget {
+  const UGVBluetoothController({super.key, required this.imageUrl});
+  final String imageUrl;
   @override
-  State<UGVBluetoothController> createState() => _UGVBluetoothControllerState();
+  State<UGVBluetoothController> createState() => _UGVBluetoothControllerState(this.imageUrl);
 }
 
 class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
   Timer? timer;
   bool pressed = false;
+  bool led = false;
+  bool buzzer = false;
   BluetoothConnection? connection;
   BluetoothDevice? connectedDevice;
-
+  String imageUrl = '';
+  _UGVBluetoothControllerState(this.imageUrl);
   @override
   void initState() {
     super.initState();
@@ -88,6 +93,16 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
       }
     });
   }
+  List<String> messages = [];
+
+  TextEditingController _controller = TextEditingController();
+
+  void _appendMessage(String message) {
+    setState(() {
+      messages.add(message); // Add new message to the list
+    });
+    _controller.clear(); // Clear the input field after sending
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,40 +116,17 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
       backgroundColor: theme.colorScheme.inversePrimary,
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
+            Slider(value: 150/255, onChanged: (a){}),
             // Forward Button (Up)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: UGVControlButton(
-                direction: UGVControlDirection.up,
-                color: Colors.blueAccent,
-                onPressed: () {
-                  sendInstruction('F');
-                  sleep(const Duration(microseconds: 10));
-                  sendInstruction('S');
-                },
-                onLongPress: () {
-                  pressed = true;
-                  startStream('F');
-                },
-                onLongPressEnd: _onLongPressEnd,
-                size: 100,
-                icon: Icons.arrow_upward,
-              ),
-            ),
-            // Middle Row with Left and Right Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                // Left Button
-                Padding(
+              Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: UGVControlButton(
-                    direction: UGVControlDirection.left,
+                    direction: UGVControlDirection.up,
                     color: Colors.blueAccent,
                     onPressed: () {
-                      sendInstruction('L');
+                      startStream('L');
                       sleep(const Duration(microseconds: 20));
                       sendInstruction('S');
                     },
@@ -143,16 +135,121 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
                       startStream('L');
                     },
                     onLongPressEnd: _onLongPressEnd,
-                    size: 100,
-                    icon: Icons.arrow_left,
+                    size: 60,
+                    icon: Icons.arrow_upward,
                   ),
                 ),
-                const SizedBox(width: 120),
-                // Right Button
+                const SizedBox(height: 15,),
+                // Middle Row with Left and Right Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    // Left Button
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: UGVControlButton(
+                        direction: UGVControlDirection.left,
+                        color: Colors.blueAccent,
+                        onPressed: () {
+                          sendInstruction('B');
+                          sleep(const Duration(microseconds: 20));
+                          sendInstruction('S');
+                        },
+                        onLongPress: () {
+                          pressed = true;
+                          startStream('B');
+                        },
+                        onLongPressEnd: _onLongPressEnd,
+                        size: 60,
+                        icon: Icons.arrow_left,
+                      ),
+                    ),
+                                    const SizedBox(width: 15),
+                    Column(children:[
+                    SizedBox(
+                      width: 70,
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            if (!led) {
+                              sendInstruction('A');
+                              sendInstruction('A');
+                              sendInstruction('A');
+                              led = true;
+                            } else {
+                              sendInstruction('T');
+                              sendInstruction('T');
+                              sendInstruction('T');
+                              led = false;
+                            }
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: led ? Colors.green : Colors.red,
+                          foregroundColor: Colors.blue,
+                        ),
+                        child: const Text(
+                          "LED",
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 70,
+                      
+                      height: 40,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            if (!buzzer) {
+                              sendInstruction('C');
+                              buzzer = true;
+                            } else {
+                              sendInstruction('D');
+                              buzzer = false;
+                            }
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: buzzer ? Colors.green : Colors.red,
+                          foregroundColor: Colors.blue,
+                        ),
+                        child: const Text(
+                          "Buzzer",
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ),]),
+                    const SizedBox(width: 15),
+                    // Right Button
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: UGVControlButton(
+                        direction: UGVControlDirection.right,
+                        color: Colors.blueAccent,
+                        onPressed: () {
+                          sendInstruction('F');
+                          sleep(const Duration(microseconds: 20));
+                          sendInstruction('S');
+                        },
+                        onLongPress: () {
+                          pressed = true;
+                          startStream('F');
+                        },
+                        onLongPressEnd: _onLongPressEnd,
+                        size: 60,
+                        icon: Icons.arrow_right,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 15,),
+                // Backward Button (Down)
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: UGVControlButton(
-                    direction: UGVControlDirection.right,
+                    direction: UGVControlDirection.down,
                     color: Colors.blueAccent,
                     onPressed: () {
                       sendInstruction('R');
@@ -164,32 +261,47 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
                       startStream('R');
                     },
                     onLongPressEnd: _onLongPressEnd,
-                    size: 100,
-                    icon: Icons.arrow_right,
+                    size: 60,
+                    icon: Icons.arrow_downward,
                   ),
                 ),
-              ],
+          SizedBox(height: 30),
+          Row(children: [
+           Transform.rotate(
+            angle: 90 * 3.1415926535897932 / 180, // Convert 90 degrees to radians
+            child: Container(
+              width: 200,
+              height: 200,
+              color: Color.fromARGB(19, 0, 0, 0),
+              child:Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.all(1.0),
+                  child: Text(messages[index]),
+                );
+              },
             ),
-            // Backward Button (Down)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: UGVControlButton(
-                direction: UGVControlDirection.down,
-                color: Colors.blueAccent,
-                onPressed: () {
-                  sendInstruction('B');
-                  sleep(const Duration(microseconds: 20));
-                  sendInstruction('S');
-                },
-                onLongPress: () {
-                  pressed = true;
-                  startStream('B');
-                },
-                onLongPressEnd: _onLongPressEnd,
-                size: 100,
-                icon: Icons.arrow_downward,
-              ),
+          ),
+                  ],
+      ),
             ),
+          ),
+           Transform.rotate(
+            angle: 90 * 3.1415926535897932 / 180, // Convert 90 degrees to radians
+            child: Container(
+              width: 150,
+              height: 150,
+              color: const Color.fromARGB(0, 33, 149, 243),
+              child: CameraView(imageUrl: imageUrl)
+            ),
+          ),
+          ],)
+          
+          
           ],
         ),
       ),
