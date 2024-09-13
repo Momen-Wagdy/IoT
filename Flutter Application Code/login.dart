@@ -1,7 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:ugv_control_app/home_page.dart';
+import 'package:crypto/crypto.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key, required this.client});
@@ -20,36 +22,48 @@ class _LoginPageState extends State<LoginPage> {
 
   _LoginPageState(this.client);
 
+  String _hashPassword(String password) {
+    final bytes = utf8.encode(password);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
   Future<void> _login() async {
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => UGVHomePage(client: client!)),
-      );
-    } catch (e) {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? hashedPassword = prefs.getString(_emailController.text.trim());
+  
+      if (hashedPassword != null && hashedPassword == _hashPassword(_passwordController.text.trim())) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => UGVHomePage(client: client!)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: Invalid credentials')),
+        );
+      }
+}  catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: $e')),
+        SnackBar(content: Text('An error occurred: $e')),
       );
     }
   }
 
-  Future<void> _signup() async {
+
+  Future<void> _signup() async {    
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Passwords do not match')),
+      SnackBar(content: Text('Passwords do not match')),
       );
       return;
     }
-
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String email = _emailController.text.trim();
+      final String hashedPassword = _hashPassword(_passwordController.text.trim());
+
+      await prefs.setString(email, hashedPassword);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Signup successful')),
       );
@@ -58,7 +72,7 @@ class _LoginPageState extends State<LoginPage> {
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Signup failed: $e')),
+        SnackBar(content: Text('An error occurred: $e')),
       );
     }
   }
