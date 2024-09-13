@@ -18,7 +18,6 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
   double speed = 150;
   bool pressed = false;
   bool led = false;
-  bool buzzer = false;
   BluetoothConnection? connection;
   BluetoothDevice? connectedDevice;
   String imageUrl = '';
@@ -26,7 +25,7 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
   @override
   void initState() {
     super.initState();
-    //scanDevices();
+    scanDevices();
   }
 
   void scanDevices() async {
