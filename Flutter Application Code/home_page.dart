@@ -23,8 +23,8 @@ class _UGVHomePageState extends State<UGVHomePage> {
     super.initState();
     _children = [
       MqttDataPage(client: widget.client),
-      const UGVBluetoothController(imageUrl: "http://192.168.1.10:19999/image/"),
-      const CameraView(imageUrl: "http://192.168.1.10:19999/image/")
+      const UGVBluetoothController(imageUrl: "http://192.168.76.208:19999"),
+      const CameraView(imageUrl: "http://192.168.76.208:19999/image/")
     ];
   }
 
