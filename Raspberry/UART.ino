@@ -1,6 +1,19 @@
 #include <HardwareSerial.h>
 #include <Keypad.h>
 #include "DHT.h"
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+// OLED display width and height
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 32
+
+// OLED reset pin (some displays may need it, set to -1 if not used)
+#define OLED_RESET -1
+
+// Create an instance of the SSD1306 display
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 const int ROWS = 4;
 const int COLS = 4;
@@ -8,6 +21,8 @@ const int buzzer_pin = 15;
 const int PIR_pin = 27;
 const int DHT_pin = 14;
 int DHT_type = DHT11;
+const int water_sensor_button = 11;
+const int touch_button = 12; 
 
 DHT dht(DHT_pin, DHT_type);
 
@@ -34,16 +49,40 @@ void setup() {
 
   pinMode(buzzer_pin, OUTPUT);
   pinMode(PIR_pin, INPUT);
+  pinMode(water_sensor_button, INPUT);
+  pinMode(touch_button, INPUT);
   
   digitalWrite(buzzer_pin, LOW);
 
   dht.begin();
+
+  if (!display.begin(SSD1306_I2C_ADDRESS, OLED_RESET)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;); // Stop execution
+  }
+  display.clearDisplay();
+  display.setTextSize(1);      
+  display.setTextColor(WHITE); 
 }
 
 void loop() {
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();
   char key = keypad.getKey();
+  int reading = digitalRead(touch_button);
+  if (reading == HIGH) {
+    display.clearDisplay();
+    // Set the cursor position (adjust based on where you want to display the text)
+    display.setCursor(0, 0);     // Top-left corner (x=0, y=0)
+
+    // Print text
+    display.println("Station");
+
+    // Update the display with the buffer content
+    display.display();
+  } else {
+    display.clearDisplay();
+  }
   if (key) {
     if (key >= '0' && key <= '9') {
       password += key;
@@ -87,15 +126,21 @@ void loop() {
   } else {
     append_beep('b');
   }
+  int water = digitalRead(water_sensor_button);
+  if (water == HIGH) {
+    append_beep('B');
+  } else {
+    append_beep('b');
+  }
 }
 
 void append_beep(char beepType) {
-  if (beeps.length() < 6) {
+  if (beeps.length() < 7) {
     beeps += beepType;
   }
 
-  if (beeps.length() == 6) {
-    if (beeps != "bbbbbb") {
+  if (beeps.length() == 7) {
+    if (beeps != "bbbbbbb") {
       activate_sequence();
     }
     beeps = "";
