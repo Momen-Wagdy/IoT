@@ -17,9 +17,9 @@ def waterpump_callback(msg):
 
 def power_callback(data):
     if data.data:
-        GPIO.output(relay_pins[1], GPIO.LOW)
+        GPIO.output(relay_pins[2], GPIO.LOW)
     else:
-        GPIO.output(relay_pins[1], GPIO.HIGH)
+        GPIO.output(relay_pins[2], GPIO.HIGH)
 
 def relay_control():
     # Set up GPIO mode
@@ -38,14 +38,10 @@ def relay_control():
     # Subscriber to listen for waterpump signal and control the second relay
     rospy.Subscriber('waterpump_signal', Bool, waterpump_callback)
 
-    relay_sub = rospy.Subscriber('power_off', Bool, power_callback)
+    relay_sub = rospy.Subscriber('power', Bool, power_callback)
 
 
     try:
-        # Immediately turn on the first relay
-        GPIO.output(relay_pins[1], GPIO.LOW)  # Turn first relay on
-        relay_pub.publish(f"Relay on: GPIO {relay_pins[1]}")
-        rospy.loginfo(f"Relay on: GPIO {relay_pins[1]}")
         
         # Keep the node running and listen for incoming messages
         rospy.spin()
