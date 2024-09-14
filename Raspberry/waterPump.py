@@ -1,5 +1,5 @@
 import rospy
-from std_msgs.msg import Bool, String
+from std_msgs.msg import Bool
 
 def flame_callback(data):
     if data.data:  # If True, flame detected
