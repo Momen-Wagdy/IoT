@@ -16,7 +16,7 @@ def flame_listener():
     rospy.init_node('flame_listener', anonymous=True)
 
     # Publisher to send messages to the 'waterpump_signal' topic
-    global pub
+    global water_pub
     water_pub = rospy.Publisher('waterpump_signal', bool, queue_size=10)
 
     # Subscribe to the 'flame_detected' topic
