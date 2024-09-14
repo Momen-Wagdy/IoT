@@ -44,7 +44,7 @@ def relay_control():
     try:
         # Immediately turn on the first relay
         GPIO.output(relay_pins[1], GPIO.LOW)  # Turn first relay on
-        pub.publish(f"Relay on: GPIO {relay_pins[1]}")
+        relay_pub.publish(f"Relay on: GPIO {relay_pins[1]}")
         rospy.loginfo(f"Relay on: GPIO {relay_pins[1]}")
         
         # Keep the node running and listen for incoming messages
