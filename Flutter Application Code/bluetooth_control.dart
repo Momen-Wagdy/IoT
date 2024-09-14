@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:ugv_control_app/custom_button.dart';
 import 'camera_view.dart';
+import 'package:http/http.dart' as http;
 
 class UGVBluetoothController extends StatefulWidget {
   const UGVBluetoothController({super.key, required this.imageUrl});
@@ -15,6 +16,7 @@ class UGVBluetoothController extends StatefulWidget {
 
 class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
   Timer? timer;
+  late Timer _timer;
   double speed = 150;
   bool pressed = false;
   bool led = false;
@@ -22,12 +24,47 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
   BluetoothDevice? connectedDevice;
   String imageUrl = '';
   _UGVBluetoothControllerState(this.imageUrl);
-  @override
+
+ @override
   void initState() {
     super.initState();
     scanDevices();
+    _startImageUpdate();
+  }
+void newMessage(String suggestion) {
+    if (suggestion.isNotEmpty) {
+      final parsed = parser(suggestion);
+      if (parsed.isNotEmpty){
+      setState(() {
+        _appendMessage(parsed);
+      });}
+    }
   }
 
+  void _startImageUpdate() {
+    _timer = Timer.periodic(const Duration(milliseconds: 300), (Timer t) async {
+      
+        var response = await http.get(Uri.parse("$imageUrl/suggest"));
+        print(response.body);
+        if (response.statusCode == 200) {
+          newMessage(response.body);
+        }
+      
+    });
+  }
+  String parser(String suggestion) {
+    final parts = suggestion.split('|');
+    if (parts.length == 4) {
+      final ls = parts[0];
+      final rs = parts[1];
+      final led = parts[2];
+      final buzzer = parts[3];
+      return "Left Motor Speed: $ls, Right Motor Speed: $rs, LED: $led, Buzzer: $buzzer";
+    }
+    return "";
+  }
+
+ 
   void scanDevices() async {
     // Request paired devices, then select one to connect
     List<BluetoothDevice> devices = await FlutterBluetoothSerial.instance.getBondedDevices();
@@ -64,7 +101,7 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
   // Send data to the connected Bluetooth device
   void sendInstruction(String command) async {
     if (connection != null && connection!.isConnected) {
-      String finalCommand = '$command$speed';
+      String finalCommand = '$command';
       print(finalCommand);
       connection!.output.add(Uint8List.fromList(finalCommand.codeUnits));
       await connection!.output.allSent;
@@ -117,17 +154,7 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            Slider(
-              value: speed, 
-              min: 0,
-              max: 255,
-              divisions: 255,
-              label: speed.round().toString(),
-              onChanged: (double value){
-                setState(() {
-                  speed = value;
-                });
-            }),
+          
             // Forward Button (Up)
               Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -274,7 +301,7 @@ class _UGVBluetoothControllerState extends State<UGVBluetoothController> {
               width: 150,
               height: 150,
               color: const Color.fromARGB(0, 33, 149, 243),
-              child: CameraView(imageUrl: imageUrl)
+              child: CameraView(imageUrl: "$imageUrl/image/")
             ),
           ),
           ],)
