@@ -5,8 +5,8 @@
 const int ROWS = 4;
 const int COLS = 4;
 const int buzzer_pin = 15;
-const int PIR_pin = 12;
-const int DHT_pin = 34;
+const int PIR_pin = 27;
+const int DHT_pin = 14;
 int DHT_type = DHT11;
 
 DHT dht(DHT_pin, DHT_type);
@@ -17,14 +17,16 @@ char keys[ROWS][COLS] = {
   {'7', '8', '9', 'C'},
   {'*', '0', '#', 'D'}
 };
-byte rowPins[ROWS] = {34, 35, 32, 33};
-byte colPins[COLS] = {25, 26, 27, 14};
+byte rowPins[ROWS] = {36, 39, 34, 35};
+byte colPins[COLS] = {32, 33, 25, 26};
 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 HardwareSerial mySerial(1);
 
 String beeps = "";
+
+String password = "";
 
 void setup() {
   mySerial.begin(115200, SERIAL_8N1, 16, 17); // RX, TX pins
@@ -43,8 +45,17 @@ void loop() {
   float temperature = dht.readTemperature();
   char key = keypad.getKey();
   if (key) {
-    mySerial.print("KEY:");
-    mySerial.println(key);
+    if (key >= '0' && key <= '9') {
+      password += key;
+    }
+    if (key == '#') {
+      password = "";
+    }
+    if (password.length() == 8) {
+      mySerial.print("password:");
+      mySerial.println(password);
+      password = "";
+    }
   }
 
   if (mySerial.available()) {
