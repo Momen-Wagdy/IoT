@@ -73,12 +73,21 @@ class ADC_Node:
         self.sensors_pub = rospy.Publisher('buzzer_sequence', String, queue_size=10)
         self.flame_pub = rospy.Publisher('flame_water', Bool, queue_size=10)
         self.power_pub = rospy.Publisher('power', Bool, queue_size=10)
+        self.fan_pub = rospy.Publusher('fan', Bool, queue_size=10)
         self.rate = rospy.Rate(10)
         self.buzzer_sequence = ""
+        self.mq2 = False
+        self.mq9 = False
 
         # Start the clock generation in a separate thread
         clock_thread = threading.Thread(target=generate_clock)
         clock_thread.start()
+    
+    def update_fan(self):
+        if (self.mq2 or self.mq9):
+            self.fan_pub.publish(True)
+        else:
+            self.fan_pub.publish(False)
 
     def run(self):
         while not rospy.is_shutdown():
@@ -107,8 +116,11 @@ class ADC_Node:
         rospy.loginfo(f"Channel {ch}: {vin}")
         if (vin > 150):
             self.buzzer_sequence += "B"
+            self.mq2 = True
         else:
             self.buzzer_sequence += "b"
+            self.mq2 = False
+        self.update_Fan()
 
     def mq_9(self, ch):
         result = read_adc(ch)
@@ -117,8 +129,11 @@ class ADC_Node:
         rospy.loginfo(f"Channel {ch}: {vin}")
         if (vin > 150):
             self.buzzer_sequence += "B"
+            self.mq9 = True
         else:
             self.buzzer_sequence += "b"
+            self.mq9 = False
+        self.update_fan()
 
     def flame(self, ch):
         result = read_adc(ch)
