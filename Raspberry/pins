@@ -71,3 +71,5 @@ ESP:
 		Right: GPIO2
 	PIR: GPIO27
 	DHT11: GPIO14
+	water_sensor_button: GPIO11
+	touch_button: GPIO12
