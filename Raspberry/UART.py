@@ -18,7 +18,7 @@ class ESP32Node:
     def buzzer_control(self, msg):
         sequence = msg.data
         for char in sequence:
-            self.ser.write(f'{char}\n')
+            self.ser.write(f'{char}\n'.encode('utf-8'))
 
     def run(self):
         rate = rospy.Rate(10)
