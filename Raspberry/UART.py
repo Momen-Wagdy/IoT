@@ -1,6 +1,6 @@
 import rospy
 import serial
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 
 class ESP32Node:
     def __init__(self):
@@ -10,6 +10,7 @@ class ESP32Node:
         self.ser = serial.Serial(self.serial_port, self.baud_rate, timeout=1)
 
         self.buzzer_sub = rospy.Subscriber('buzzer_sequence', String, self.buzzer_control)
+        self.power_pub = rospy.Publisher('power', Bool, queue_size=10)
 
         self.access_granted = False
         self.password = '11111111'
@@ -29,6 +30,7 @@ class ESP32Node:
                     if (entered_password == self.password):
                         self.access_granted = True
                         self.ser.write(b"V\n")
+                        self.power_pub.publish(True)
             rate.sleep()
 
 if __name__ == '__main__':
