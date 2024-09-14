@@ -46,7 +46,7 @@ class ADC_Node:
         vin = vout*(7500/(30000+7500))*5
         rospy.loginfo(f"Channel {ch}: {vin}")
         self.sensor_data['mq_2'] = vin
-        if (vin > 100):
+        if (vin > 150):
             self.buzzer_sequence += "B"
         else:
             self.buzzer_sequence += "b"
@@ -57,7 +57,7 @@ class ADC_Node:
         vin = vout*(7500/(30000+7500))*5
         rospy.loginfo(f"Channel {ch}: {vin}")
         self.sensor_data['mq_9'] = vin
-        if (vin > 100):
+        if (vin > 150):
             self.buzzer_sequence += "B"
         else:
             self.buzzer_sequence += "b"
@@ -68,7 +68,7 @@ class ADC_Node:
         vin = vout*(7500/(30000+7500))*5
         rospy.loginfo(f"Channel {ch}: {vin}")
         self.sensor_data['flame'] = vin
-        if (vin > 100):
+        if (vin > 150):
             self.buzzer_sequence += "B"
             self.flame_pub.publish(False)
         else:
@@ -81,8 +81,8 @@ class ADC_Node:
         current = (v - 2.5) / 0.066
         rospy.loginfo(f"Channel {ch}: {current}")
         self.sensor_data['current'] = current
-        if (current > 100):
-            self.power_pub.publish(False)
+        if (current > 150):
+            "self.power_pub.publish(False)"
         else:
             self.power_pub.publish(True)
 
@@ -92,8 +92,8 @@ class ADC_Node:
         vin = vout*(7500/(30000+7500))*5
         rospy.loginfo(f"Channel {ch}: {vin}")
         self.sensor_data['voltage'] = vin
-        if (vin > 100):
-            self.power_pub.publish(False)
+        if (vin > 150):
+            "self.power_pub.publish(False)"
         else:
             self.power_pub.publish(True)
 
